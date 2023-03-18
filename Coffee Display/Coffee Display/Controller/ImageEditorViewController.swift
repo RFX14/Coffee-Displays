@@ -15,15 +15,21 @@ class ImageEditorViewController: UIViewController, UITableViewDelegate, UITableV
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let barHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
-        let displayWidth: CGFloat = self.view.frame.width
-        let displayHeight: CGFloat = self.view.frame.height
-        
-        myTableView = UITableView(frame: CGRect(x: 0, y: barHeight, width: displayWidth, height: displayHeight - barHeight))
+        myTableView = UITableView()
         myTableView.register(UITableViewCell.self, forCellReuseIdentifier: "MyCell")
         myTableView.dataSource = self
         myTableView.delegate = self
         self.view.addSubview(myTableView)
+        // Prepare to use constraints.
+        myTableView.translatesAutoresizingMaskIntoConstraints = false
+        // Defines/hold constraints.
+        NSLayoutConstraint.activate([
+            myTableView.topAnchor.constraint(equalTo: view.topAnchor),
+            myTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            myTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            myTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+        
     }
     
     //prints info for each cell that is selected
@@ -31,11 +37,12 @@ class ImageEditorViewController: UIViewController, UITableViewDelegate, UITableV
         print("Num: \(indexPath.row)")
         print("Value: \(myArray[indexPath.row])")
     }
-    
+    // Defines number of rows
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return myArray.count
     }
     
+    // Defines number of cell
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MyCell", for: indexPath as IndexPath)
         cell.textLabel!.text = "\(myArray[indexPath.row])"
