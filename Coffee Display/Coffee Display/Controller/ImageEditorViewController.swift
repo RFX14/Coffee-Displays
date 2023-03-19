@@ -6,8 +6,36 @@
 //
 
 import UIKit
+class TableHeader: UITableViewHeaderFooterView {
+    static let identifier = "TableHeader"
+    
+    private let label: UILabel = {
+        let label = UILabel()
+        label.text = "Image Editor"
+        label.font = .systemFont(ofSize: 22, weight: .semibold)
+        label.textAlignment = .center
+        return label
+    }()
+    
+    override init(reuseIdentifier: String?) {
+        super.init(reuseIdentifier: reuseIdentifier)
+        contentView.addSubview(label)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError()
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        label.sizeToFit()
+        label.frame = CGRect(x: 0, y: contentView.frame.size.height-label.frame.size.height, width: contentView.frame.size.width, height: label.frame.size.height - 100)
+    }
+}
 
 class ImageEditorViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+    
+
     
     private let myArray: NSArray = ["First","Second","Third"]
     private var myTableView: UITableView!
@@ -17,6 +45,7 @@ class ImageEditorViewController: UIViewController, UITableViewDelegate, UITableV
         
         myTableView = UITableView()
         myTableView.register(UITableViewCell.self, forCellReuseIdentifier: "MyCell")
+        myTableView.register(TableHeader.self, forHeaderFooterViewReuseIdentifier: "header")
         myTableView.dataSource = self
         myTableView.delegate = self
         self.view.addSubview(myTableView)
@@ -47,5 +76,14 @@ class ImageEditorViewController: UIViewController, UITableViewDelegate, UITableV
         let cell = tableView.dequeueReusableCell(withIdentifier: "MyCell", for: indexPath as IndexPath)
         cell.textLabel!.text = "\(myArray[indexPath.row])"
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: "header")
+        return header
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 1
     }
 }
