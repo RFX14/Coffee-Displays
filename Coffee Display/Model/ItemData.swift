@@ -6,11 +6,10 @@
 //
 
 import Foundation
-
-struct ItemData {
-    var screenName: String
-    var description: String
-    var position:  Int
-    var price: String
-    var templateID: Int
+struct BasicItem: Identifiable, Hashable {
+    let id = UUID()
+    var title: String = "Yummy Taco"
+    var price: String = "$2.99/lb"
+    var description: String? = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
+    var position: Int = 0
 }

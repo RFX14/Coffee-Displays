@@ -9,59 +9,53 @@ import SwiftUI
 import FirebaseFirestore
 
 class ScreenManager: ObservableObject {
-    init() {
+    @Published var items: [BasicItem] = []
+    @Published var isUsingCache = true
+    
+    private var screen: String = "Austin"
+    private var user: String = "rfx14"
+    private var db = Firestore.firestore()
+    private var listener: ListenerRegistration?
+    
+    deinit {
+        removeListener()
+        print("Listener Removed!")
     }
-    func fetchCurrentScreensInfo() async -> [String: [ItemData]] {
-        let db  = Firestore.firestore()
-        let docRef = db.collection("users").document("test_acct")
-        var screens: [String: [ItemData]] = [:]
-        
-        docRef.getDocument { (document, error) in
-            if let document = document, document.exists {
-                let data = document.data()
-                let screensMap = data?["screens"] as? [String: Any] ?? [:]
-                // loop Per Screen.
-                for (curScreen, _) in screensMap {
-                    let screenMap = screensMap["\(curScreen)"] as? [String: Any] ?? [:]
-                    let screenName = "\(curScreen)"
-                    // loop per item.
-                    for (curItem, _) in screenMap {
-                        let templateId = screenMap["templateID"] as? Int ?? 0
-                        let itemSpec = screenMap["\(curItem)"] as? [String: Any] ?? [:]
-                        // loop per item details.
-                        for (_, _) in itemSpec {
-                            let price = screenMap["price"] as? String ?? "0.00"
-                            let position = screenMap["position"] as? Int ?? 0
-                            let description = screenMap["description"] as? String ?? "N/A"
-                            
-                            let curItem = ItemData(screenName: screenName, description: description, position: position, price: price, templateID: templateId)
-                            
-                            if screens[screenName] == nil {
-                                screens[screenName] = []
-                            }
-
-                            screens[screenName]?.append(curItem)
-                        }
-                    }
-                    
-                }
-            } else {
-                print("Document does not exist")
+    
+    func removeListener() {
+        listener?.remove()
+    }
+    
+    func fetchItems() {
+        listener = db.collection("users").document(user).addSnapshotListener(includeMetadataChanges: true) { [self] docSnapshot, err in
+            print("Getting items!")
+            guard let doc = docSnapshot else {
+                print("Error fetching document: \(err!)")
+                return
             }
+            
+            guard let data = doc.data() else {
+                print("Error fetching data: \(err!)")
+                return
+            }
+            
+            isUsingCache = docSnapshot!.metadata.isFromCache ? true : false
+            items = []
+            
+            let screens = data["screens"] as? [String: Any] ?? [:] // All screens
+            let items = screens[self.screen] as? [String: Any] ?? [:] // Items at current screen
+            
+            for (title, details) in items {
+                print("In \(title)")
+                let details = details as? [String: Any] ?? [:]
+                let price = details["price"] as? String ?? ""
+                let description = details["description"] as? String ?? ""
+                let position = details["position"] as? Int ?? 0
+                
+                self.items.append(.init(title: title, price: price, description: description, position: position))
+            }
+            //position represents the order in which the text & image will be saved on firebase
+            self.items.sort(by: { $0.position < $1.position })
         }
-        print(screens)
-        return screens
     }
-    /*
-    let data = document.data()
-    let user = document.documentID
-    let screenName = data["de"] as? String ?? "N/A"
-    let description = data["descrption"] as? String ?? "N/A"
-    let position = data["position"] as? Int ?? 0
-    let price = data["price"] as? String ?? "N/A"
-    let template = data["template"] as? Int ?? 0
-    screensInfo[user] = currentScreenInfo
-    print(screensInfo)
-    return screensInfo
-     */
 }

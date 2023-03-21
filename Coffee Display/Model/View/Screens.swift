@@ -9,15 +9,22 @@ import SwiftUI
 
 struct Screens: View {
     @StateObject var manager: ScreenManager
-    @State var screens: [String: [ItemData]] = [:]
+    //@State var screens: [String: [ItemData]] = [:]
+    @State var screenNames: [String] = []
+    @State var selectedScreen: String?
+    
     var body: some View {
         NavigationSplitView {
-            Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+            List(manager.items, id: \.self, selection: $selectedScreen) { screen in
+                Text(screen.title)
+            }
         } detail: {
             Text("hi")
         }
-        .task {
-            self.screens = await manager.fetchCurrentScreensInfo()
+        .onAppear {
+            manager.fetchItems()
+            print(manager.items)
+            
         }
     }
 }
