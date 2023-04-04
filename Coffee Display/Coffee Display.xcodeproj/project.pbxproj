@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9A52BDE429CA5D8C0089553B /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52BDE329CA5D8C0089553B /* Screen.swift */; };
+		9A52BDE629CA69140089553B /* ImageEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52BDE529CA69140089553B /* ImageEditor.swift */; };
 		9A74290929C90CA900844A62 /* Coffee_DisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A74290829C90CA900844A62 /* Coffee_DisplayApp.swift */; };
 		9A74290D29C90CAA00844A62 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9A74290C29C90CAA00844A62 /* Assets.xcassets */; };
 		9A74291129C90CAA00844A62 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9A74291029C90CAA00844A62 /* Preview Assets.xcassets */; };
@@ -15,10 +17,12 @@
 		9A74292929C9146F00844A62 /* ScreenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A74292829C9146F00844A62 /* ScreenManager.swift */; };
 		9A74292C29C9185E00844A62 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 9A74292B29C9185E00844A62 /* FirebaseAuth */; };
 		9A74292E29C9185E00844A62 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 9A74292D29C9185E00844A62 /* FirebaseFirestore */; };
-		9A74293429CA054700844A62 /* ItemData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A74293329CA054700844A62 /* ItemData.swift */; };
+		9A74293429CA054700844A62 /* BasicItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A74293329CA054700844A62 /* BasicItem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9A52BDE329CA5D8C0089553B /* Screen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Screen.swift; sourceTree = "<group>"; };
+		9A52BDE529CA69140089553B /* ImageEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageEditor.swift; sourceTree = "<group>"; };
 		9A74290629C90CA900844A62 /* Coffee Display.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Coffee Display.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A74290829C90CA900844A62 /* Coffee_DisplayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coffee_DisplayApp.swift; sourceTree = "<group>"; };
 		9A74290C29C90CAA00844A62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -27,7 +31,7 @@
 		9A74292429C913A500844A62 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		9A74292629C9144400844A62 /* Screens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Screens.swift; sourceTree = "<group>"; };
 		9A74292829C9146F00844A62 /* ScreenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManager.swift; sourceTree = "<group>"; };
-		9A74293329CA054700844A62 /* ItemData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemData.swift; sourceTree = "<group>"; };
+		9A74293329CA054700844A62 /* BasicItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicItem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,7 +73,8 @@
 		9A74291B29C90DA500844A62 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				9A74293329CA054700844A62 /* ItemData.swift */,
+				9A74293329CA054700844A62 /* BasicItem.swift */,
+				9A52BDE329CA5D8C0089553B /* Screen.swift */,
 			);
 			name = Model;
 			path = ../Model;
@@ -79,6 +84,7 @@
 			isa = PBXGroup;
 			children = (
 				9A74292629C9144400844A62 /* Screens.swift */,
+				9A52BDE529CA69140089553B /* ImageEditor.swift */,
 			);
 			name = View;
 			path = ../Model/View;
@@ -186,9 +192,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9A52BDE629CA69140089553B /* ImageEditor.swift in Sources */,
+				9A52BDE429CA5D8C0089553B /* Screen.swift in Sources */,
 				9A74292729C9144400844A62 /* Screens.swift in Sources */,
 				9A74292929C9146F00844A62 /* ScreenManager.swift in Sources */,
-				9A74293429CA054700844A62 /* ItemData.swift in Sources */,
+				9A74293429CA054700844A62 /* BasicItem.swift in Sources */,
 				9A74290929C90CA900844A62 /* Coffee_DisplayApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

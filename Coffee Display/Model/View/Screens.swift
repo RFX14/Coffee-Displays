@@ -9,22 +9,25 @@ import SwiftUI
 
 struct Screens: View {
     @StateObject var manager: ScreenManager
-    //@State var screens: [String: [ItemData]] = [:]
-    @State var screenNames: [String] = []
-    @State var selectedScreen: String?
+    @State var selectedScreen: Screen?
     
     var body: some View {
         NavigationSplitView {
-            List(manager.items, id: \.self, selection: $selectedScreen) { screen in
-                Text(screen.title)
+            // Makes list of all the current screens
+            List(manager.screens, id: \.self, selection: $selectedScreen) { screen in
+                Text(screen.name)
             }
         } detail: {
-            Text("hi")
+            if selectedScreen != nil {
+                ImageEditor(manager: manager, selectedScreen: selectedScreen!)
+            } else {
+                Text("Select Screen To View & Edit")
+            }
         }
         .onAppear {
-            manager.fetchItems()
-            print(manager.items)
-            
+            manager.fetchAvailableScreens {
+                manager.screens.sort(by: {$0.name < $1.name})
+            }
         }
     }
 }
