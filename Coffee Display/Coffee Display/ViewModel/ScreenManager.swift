@@ -56,4 +56,50 @@ class ScreenManager: ObservableObject {
             completion()
         }
     }
+    
+    /*
+    func saveCurrentScreens(curScreenId: UUID) {
+        //will probably have to loop through each item and then add it to firebase
+        for (idx, screen) in screens.enumerated() {
+            if screen.id == curScreenId {
+                let curItemArray = screens[idx].items
+                for curItem in curItemArray {
+                    
+                    db.collection("users").document(user).updateData([
+                        "screens.\(screens[idx].name).\(curItem.title).description" : curItem.description,
+                        "screens.\(screens[idx].name).\(curItem.position).position" : curItem.position,
+                        //"screens.\(screens[idx].name).\(curItem.price).price" : curItem.price
+                    ])
+                }
+            }
+        }
+    }
+    */
+    func createNewItemTemplate(index: Int) {
+        var newItemTemplate: [String: [String: Any]] = [:]
+        let currentScreen = screens[index]
+        
+        if newItemTemplate[currentScreen.name] == nil {
+            newItemTemplate[currentScreen.name] = [:]
+        }
+        
+        for curItem in currentScreen.items {
+            newItemTemplate[currentScreen.name]?[curItem.title] = ["description": curItem.description, "position": curItem.position, "price": curItem.price]
+        }
+        
+        addingItemToFirebase(newitem: newItemTemplate)
+    }
+    
+    func addingItemToFirebase(newitem: [String: [String: Any]] ) {
+        
+        db.collection("users").document(user).setData([
+            "screens": newitem
+        ]) { err in
+           if let err = err {
+               print("Error adding document: \(err)")
+           } else {
+               print("Document added with ID")
+           }
+        }
+    }
 }

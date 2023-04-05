@@ -173,6 +173,11 @@ struct ImageEditor: View {
             //checks that the current screen is the only one that is updated with the new item.
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items.append(screen.items[(screen.items.count - 1)])
+                print(manager.screens)
+                //Will now add it to firebase
+                //call a function that will create the dictionary that will be sent to firebase.
+                manager.createNewItemTemplate(index: idx)
+                //manager.addingItemToFirebase(ne)
                 print("\tAdd Succeded!!")
                 return
             }
