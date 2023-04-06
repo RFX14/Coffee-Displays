@@ -175,7 +175,7 @@ struct ImageEditor: View {
             //checks that the current screen is the only one that is updated with the new item.
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items.append(screen.items[(screen.items.count - 1)])
-                manager.createNewItemTemplate(index: idx)
+                manager.createFirebaseTemplate(index: idx)
                 print("\tAdd Succeded!!")
                 return
             }
@@ -201,7 +201,7 @@ struct ImageEditor: View {
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
                 //update firebase with changes
-                manager.createNewItemTemplate(index: idx)
+                manager.createFirebaseTemplate(index: idx)
                 print("\tUpdate Succeded!!")
                 return
             }

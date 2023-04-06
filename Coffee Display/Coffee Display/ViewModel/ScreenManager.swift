@@ -63,29 +63,30 @@ class ScreenManager: ObservableObject {
                 //add the newScreen in manager Screens with the same index
                 screens[idx] = newScreen
                 print(screens)
-                createNewItemTemplate(index: idx)
+                createFirebaseTemplate(index: idx)
             }
         }
     }
     
 
-    func createNewItemTemplate(index: Int) {
-        var newItemTemplate: [String: [String: Any]] = [:]
-        let currentScreen = screens[index]
-        
-        if newItemTemplate[currentScreen.name] == nil {
-            newItemTemplate[currentScreen.name] = [:]
+    func createFirebaseTemplate(index: Int) {
+        var firebaseTemplate: [String: [String: Any]] = [:]
+        for currentScreen in screens {
+            if firebaseTemplate[currentScreen.name] == nil {
+                firebaseTemplate[currentScreen.name] = [:]
+            }
+            
+            for curItem in currentScreen.items {
+                firebaseTemplate[currentScreen.name]?[curItem.title] = ["description": curItem.description ?? "N/A", "position": curItem.position, "price": curItem.price] as [String : Any]
+            }
         }
-        
-        for curItem in currentScreen.items {
-            newItemTemplate[currentScreen.name]?[curItem.title] = ["description": curItem.description, "position": curItem.position, "price": curItem.price]
-        }
-        updateFirebase(newitem: newItemTemplate)
+        print(firebaseTemplate)
+        updateFirebase(firebaseTemplate: firebaseTemplate)
     }
     
-    func updateFirebase(newitem: [String: [String: Any]] ) {
+    func updateFirebase(firebaseTemplate: [String: [String: Any]] ) {
         db.collection("users").document(user).setData([
-            "screens": newitem
+            "screens": firebaseTemplate
         ]) { err in
            if let err = err {
                print("Error adding document: \(err)")
