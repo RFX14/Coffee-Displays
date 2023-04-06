@@ -29,6 +29,11 @@ struct ImageEditor: View {
     @GestureState private var fingerLocation: CGPoint? = nil
     @GestureState private var startLocation: CGPoint? = nil
     
+    //Image variables
+    @State private var showingImagePicker = false
+    @State private var croppedImage: UIImage?
+    @State private var oldImages = [1]
+    
     /*
     var simpleDrag: some Gesture {
         DragGesture()
@@ -56,34 +61,55 @@ struct ImageEditor: View {
             ZStack {
                 VStack {
                     List {
-                        // TODO: FIX THE FORCE UNWRAPPING
-                        ForEach(selectedScreen.items.indices, id: \.self) { idx in
-                            VStack(alignment: .leading) {
-                                HStack {
-                                    Text(selectedScreen.items[idx].title)
-                                        .fontWeight(.medium)
-                                    Spacer()
-                                    Text(selectedScreen.items[idx].price)
+                        if let croppedImage {
+                            Image(uiImage: croppedImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 300, height: 300)
+                        }
+                        Section("TextField") {
+                            ForEach(selectedScreen.items.indices, id: \.self) { idx in
+                                VStack(alignment: .leading) {
+                                    HStack {
+                                        Text(selectedScreen.items[idx].title)
+                                            .fontWeight(.medium)
+                                        Spacer()
+                                        Text(selectedScreen.items[idx].price)
+                                    }
+                                    Text(selectedScreen.items[idx].description ?? "")
+                                }.contentShape(Rectangle())
+                                .onTapGesture {
+                                    let item = selectedScreen.items[idx]
+                                    newItemName = item.title
+                                    newItemPrice = item.price
+                                    newItemDescription = item.description ?? ""
+                                    showSharedMenu = true
+                                    selectedItemIdx = idx
                                 }
-                                Text(selectedScreen.items[idx].description ?? "")
-                            }.contentShape(Rectangle())
-                            .onTapGesture {
-                                let item = selectedScreen.items[idx]
-                                newItemName = item.title
-                                newItemPrice = item.price
-                                newItemDescription = item.description ?? ""
-                                showSharedMenu = true
-                                selectedItemIdx = idx
+                            }
+                            .onMove(perform: move)
+                            .onDelete { indexSet in
+                                selectedScreen.items.remove(atOffsets: indexSet)
+                                manager.deleteItems(newScreen: selectedScreen)
                             }
                         }
-                        .onMove(perform: move)
-                        .onDelete { indexSet in
-                            selectedScreen.items.remove(atOffsets: indexSet)
-                            manager.deleteItems(newScreen: selectedScreen)
-                            
-                            
+                        
+                        Section("Images") {
+                            ForEach(oldImages.indices, id: \.self) { idx in
+                                VStack(alignment: .leading) {
+                                    ZStack {
+                                        HStack {
+                                            Text("Select Image \(idx)")
+                                        }
+                                    }
+                                    .onTapGesture {
+                                        showingImagePicker = true
+                                    }
+                                }
+                            }
                         }
                     }.onAppear {
+                        print("selectScreen, \(selectedScreen)")
                         print("View Appearing!")
                         print("\t\(selectedScreen.items.first?.title)")
                         oldItems = selectedScreen.items
@@ -154,6 +180,7 @@ struct ImageEditor: View {
                 selectedScreen.items.sort(by: {$0.position < $1.position})
                 location = .init(x: geo.size.height / 2, y: geo.size.width / 2)
             }
+            .cropImagePicker(options: [.circle,.square,.rectangle], show: $showingImagePicker, croppedImage: $croppedImage)
         }
     }
     

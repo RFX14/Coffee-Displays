@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9A52967229DF615500D32B3E /* Crop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52967129DF615500D32B3E /* Crop.swift */; };
+		9A52967429DF6DF400D32B3E /* CustomImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52967329DF6DF400D32B3E /* CustomImagePicker.swift */; };
 		9A52BDE429CA5D8C0089553B /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52BDE329CA5D8C0089553B /* Screen.swift */; };
 		9A52BDE629CA69140089553B /* ImageEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52BDE529CA69140089553B /* ImageEditor.swift */; };
 		9A74290929C90CA900844A62 /* Coffee_DisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A74290829C90CA900844A62 /* Coffee_DisplayApp.swift */; };
@@ -21,6 +23,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9A52967129DF615500D32B3E /* Crop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Crop.swift; sourceTree = "<group>"; };
+		9A52967329DF6DF400D32B3E /* CustomImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomImagePicker.swift; sourceTree = "<group>"; };
 		9A52BDE329CA5D8C0089553B /* Screen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Screen.swift; sourceTree = "<group>"; };
 		9A52BDE529CA69140089553B /* ImageEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageEditor.swift; sourceTree = "<group>"; };
 		9A74290629C90CA900844A62 /* Coffee Display.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Coffee Display.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -75,6 +79,7 @@
 			children = (
 				9A74293329CA054700844A62 /* BasicItem.swift */,
 				9A52BDE329CA5D8C0089553B /* Screen.swift */,
+				9A52967129DF615500D32B3E /* Crop.swift */,
 			);
 			name = Model;
 			path = ../Model;
@@ -85,6 +90,7 @@
 			children = (
 				9A74292629C9144400844A62 /* Screens.swift */,
 				9A52BDE529CA69140089553B /* ImageEditor.swift */,
+				9A52967329DF6DF400D32B3E /* CustomImagePicker.swift */,
 			);
 			name = View;
 			path = ../Model/View;
@@ -193,10 +199,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				9A52BDE629CA69140089553B /* ImageEditor.swift in Sources */,
+				9A52967229DF615500D32B3E /* Crop.swift in Sources */,
 				9A52BDE429CA5D8C0089553B /* Screen.swift in Sources */,
 				9A74292729C9144400844A62 /* Screens.swift in Sources */,
 				9A74292929C9146F00844A62 /* ScreenManager.swift in Sources */,
 				9A74293429CA054700844A62 /* BasicItem.swift in Sources */,
+				9A52967429DF6DF400D32B3E /* CustomImagePicker.swift in Sources */,
 				9A74290929C90CA900844A62 /* Coffee_DisplayApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
