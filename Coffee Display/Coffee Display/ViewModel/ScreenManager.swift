@@ -56,6 +56,18 @@ class ScreenManager: ObservableObject {
             completion()
         }
     }
+    
+    func deleteItems(newScreen: Screen) {
+        for idx in screens.indices {
+            if screens[idx].id == newScreen.id {
+                //add the newScreen in manager Screens with the same index
+                screens[idx] = newScreen
+                print(screens)
+                createNewItemTemplate(index: idx)
+            }
+        }
+    }
+    
 
     func createNewItemTemplate(index: Int) {
         var newItemTemplate: [String: [String: Any]] = [:]

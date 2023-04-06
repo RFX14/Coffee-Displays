@@ -51,7 +51,6 @@ struct ImageEditor: View {
             }
     }
     */
-    
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -80,6 +79,9 @@ struct ImageEditor: View {
                         .onMove(perform: move)
                         .onDelete { indexSet in
                             selectedScreen.items.remove(atOffsets: indexSet)
+                            manager.deleteItems(newScreen: selectedScreen)
+                            
+                            
                         }
                     }.onAppear {
                         print("View Appearing!")
@@ -207,5 +209,4 @@ struct ImageEditor: View {
         
         print("\tUpdate Failed")
     }
-
 }
