@@ -180,7 +180,7 @@ struct ImageEditor: View {
                 selectedScreen.items.sort(by: {$0.position < $1.position})
                 location = .init(x: geo.size.height / 2, y: geo.size.width / 2)
             }
-            .cropImagePicker(options: [.circle,.square,.rectangle], show: $showingImagePicker, croppedImage: $croppedImage)
+            .cropImagePicker(options: [.circle,.square,.rectangle,.custom(.init(width: 200, height: 200))], show: $showingImagePicker, croppedImage: $croppedImage)
         }
     }
     
