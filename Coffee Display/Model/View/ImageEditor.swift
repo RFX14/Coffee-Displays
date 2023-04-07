@@ -61,12 +61,6 @@ struct ImageEditor: View {
             ZStack {
                 VStack {
                     List {
-                        if let croppedImage {
-                            Image(uiImage: croppedImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 300, height: 300)
-                        }
                         Section("TextField") {
                             ForEach(selectedScreen.items.indices, id: \.self) { idx in
                                 VStack(alignment: .leading) {
@@ -99,7 +93,17 @@ struct ImageEditor: View {
                                 VStack(alignment: .leading) {
                                     ZStack {
                                         HStack {
-                                            Text("Select Image \(idx)")
+                                            if let croppedImage {
+                                                Image(uiImage: croppedImage)
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .frame(width: 100, height: 100)
+                                                Spacer()
+                                                Text(":\tImage")
+                                            } else {
+                                                Text("Select Image \(idx) ")
+                                            }
+                                            
                                         }
                                     }
                                     .onTapGesture {
@@ -107,6 +111,7 @@ struct ImageEditor: View {
                                     }
                                 }
                             }
+                            .onMove(perform: move)
                         }
                     }.onAppear {
                         print("selectScreen, \(selectedScreen)")
@@ -180,7 +185,8 @@ struct ImageEditor: View {
                 selectedScreen.items.sort(by: {$0.position < $1.position})
                 location = .init(x: geo.size.height / 2, y: geo.size.width / 2)
             }
-            .cropImagePicker(options: [.circle,.square,.rectangle,.custom(.init(width: 200, height: 200))], show: $showingImagePicker, croppedImage: $croppedImage)
+            //Turned off other shapes.
+            .cropImagePicker(options: [.custom(.init(width: 200, height: 200))], show: $showingImagePicker, croppedImage: $croppedImage)
         }
     }
     

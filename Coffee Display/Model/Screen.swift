@@ -16,13 +16,22 @@ struct Screen: Identifiable, Hashable  {
                         return false
                     }
                 }
+                if lhs.images.count == rhs.images.count {
+                    for i in 0..<lhs.images.count {
+                        if lhs.images[i] != rhs.images[i] {
+                            return false
+                        }
+                    }
+                }
                 return true
             }
         }
         return false
     }
+
     
     let id = UUID()
     let name: String
     var items: [BasicItem] = []
+    var images: [Images] = []
 }
