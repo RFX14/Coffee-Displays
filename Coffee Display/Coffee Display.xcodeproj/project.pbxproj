@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		9A2D039529E09DFD006139DF /* Images.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A2D039429E09DFD006139DF /* Images.swift */; };
+		9A2D039829E24979006139DF /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 9A2D039729E24979006139DF /* FirebaseStorage */; };
 		9A52967229DF615500D32B3E /* Crop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52967129DF615500D32B3E /* Crop.swift */; };
 		9A52967429DF6DF400D32B3E /* CustomImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52967329DF6DF400D32B3E /* CustomImagePicker.swift */; };
 		9A52BDE429CA5D8C0089553B /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A52BDE329CA5D8C0089553B /* Screen.swift */; };
@@ -47,12 +48,20 @@
 			files = (
 				9A74292C29C9185E00844A62 /* FirebaseAuth in Frameworks */,
 				9A74292E29C9185E00844A62 /* FirebaseFirestore in Frameworks */,
+				9A2D039829E24979006139DF /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9A2D039629E24979006139DF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9A74290729C90CA900844A62 /* Coffee Display */ = {
 			isa = PBXGroup;
 			children = (
@@ -112,6 +121,7 @@
 			children = (
 				9A74290729C90CA900844A62 /* Coffee Display */,
 				9A7904CF29C55D2600E3F75F /* Products */,
+				9A2D039629E24979006139DF /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -142,6 +152,7 @@
 			packageProductDependencies = (
 				9A74292B29C9185E00844A62 /* FirebaseAuth */,
 				9A74292D29C9185E00844A62 /* FirebaseFirestore */,
+				9A2D039729E24979006139DF /* FirebaseStorage */,
 			);
 			productName = "Coffee Display";
 			productReference = 9A74290629C90CA900844A62 /* Coffee Display.app */;
@@ -441,6 +452,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		9A2D039729E24979006139DF /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A74292A29C9185E00844A62 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
 		9A74292B29C9185E00844A62 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9A74292A29C9185E00844A62 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

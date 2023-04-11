@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseFirestore
+import FirebaseStorage
 
 class ScreenManager: ObservableObject {
     @Published var screens: [Screen] = []
@@ -26,6 +27,49 @@ class ScreenManager: ObservableObject {
     // Note: completion handler was used to make sure everthing was completed before the name sorting would be completed in the main view.
     func fetchAvailableScreens(completion: @escaping(() -> Void)) {
         print("Fetching!!")
+        //We going to wait for "fetchAvailableImages" and then run the stuff below
+        fetchAvailableImages { [self] in
+            db.collection("users").document(user).getDocument { [self] docSnapshot, err in
+                guard let doc = docSnapshot else {
+                    print("Error fetching document: \(err!)")
+                    return
+                }
+                
+                guard let data = doc.data() else {
+                    print("Error fetching data: \(err!)")
+                    return
+                }
+                let screens = data["screens"] as? [String: Any] ?? [:]
+                
+                // Items
+                for (screens, item) in screens {
+                    //print(item)
+                    let item = item as? [String: Any] ?? [:]
+                    var items: [BasicItem] = []
+                    var images: [Images] = []
+                    
+                    for (title, details) in item {
+                         if title == "items" {
+                            let item_details = details as? [String: [String: Any]] ?? [:]
+                            for (item_name, item_values) in item_details {
+                                let price = item_values["price"] as? String ?? ""
+                                let description = item_values["description"] as? String ?? ""
+                                let position = item_values["position"] as? Int ?? 0
+                                
+                                items.append(.init(title: item_name, price: price, description: description, position: position))
+                            }
+                        }
+                    }
+                    
+                    self.screens.append(Screen(name: screens, items: items, images: images))
+                }
+                print(self.screens)
+                completion()
+            }
+        }
+    }
+    
+    func fetchAvailableImages(completion: @escaping(() -> Void)) {
         db.collection("users").document(user).getDocument { [self] docSnapshot, err in
             guard let doc = docSnapshot else {
                 print("Error fetching document: \(err!)")
@@ -38,22 +82,71 @@ class ScreenManager: ObservableObject {
             }
             
             let screens = data["screens"] as? [String: Any] ?? [:]
+            var allImages: [String: [Images]] = [:]
+            var imageCounter: [String: Int] = [:]
+            var isAllImagesDownloaded: [String: Bool] = [:]
             
-            for (name, item) in screens {
+            for (screensName, item) in screens {
+                
                 let item = item as? [String: Any] ?? [:]
-                var items: [BasicItem] = []
-                for (title, details) in item {
-                    let details = details as? [String: Any] ?? [:]
-                    let price = details["price"] as? String ?? ""
-                    let description = details["description"] as? String ?? ""
-                    let position = details["position"] as? Int ?? 0
-                    
-                    items.append(.init(title: title, price: price, description: description, position: position))
+                
+                
+                if allImages[screensName] == nil {
+                    allImages[screensName] = []
                 }
                 
-                self.screens.append(Screen(name: name, items: items))
+                if imageCounter[screensName] == nil {
+                    imageCounter[screensName] = 0
+                }
+                
+                if isAllImagesDownloaded[screensName] == nil {
+                    isAllImagesDownloaded[screensName] = false
+                }
+                
+                for (title, details) in item {
+                    
+                    if title == "images" {
+                        let image_details = details as? [String: [String: Any]] ?? [:]
+                        
+                        for (image_name, image_values) in image_details {
+                            
+                            let image_link = image_values["image_link"] as? String ?? ""
+                            let position = image_values["position"] as? Int ?? 0
+                            
+                            let storageRef = Storage.storage().reference()
+                            let fileRef = storageRef.child(image_link)
+                            
+                            fileRef.getData(maxSize: 5 * 1024 * 1024) { data, error in
+                                //Seems screen_1 is not gettting any images. firebase might not be set up right
+                                if error == nil && data != nil {
+                                    let cur_image = UIImage(data: data!)
+                                
+                                    allImages[screensName]?.append(Images(title: image_name, position: position, image: cur_image))
+                                    imageCounter[screensName]! += 1
+                                    print(allImages, imageCounter)
+                                    
+                                    for (curScreen, _) in allImages {
+                                        if allImages[curScreen]?.count == imageCounter[curScreen] {
+                                            isAllImagesDownloaded[screensName] = true
+                                        } else if allImages[curScreen]?.count != imageCounter[curScreen] {
+                                            isAllImagesDownloaded[screensName] = false
+                                        }
+                                        print(screensName, isAllImagesDownloaded)
+                                    }
+                                    
+                                    if isAllImagesDownloaded.allSatisfy({$0.value == true}) {
+                                        print("completed")
+                                        completion()
+                                    }
+                                } else if data == nil {
+                                    print("NO DATA")
+                                }
+                            }
+                        }
+
+                    }
+                }
             }
-            completion()
         }
     }
     
@@ -94,5 +187,11 @@ class ScreenManager: ObservableObject {
                print("Document added with ID")
            }
         }
+    }
+}
+
+extension String {
+    subscript(i: Int) -> String {
+        return  i < count ? String(self[index(startIndex, offsetBy: i)]) : ""
     }
 }

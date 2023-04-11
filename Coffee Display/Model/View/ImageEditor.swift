@@ -89,7 +89,7 @@ struct ImageEditor: View {
                         }
                         
                         Section("Images") {
-                            ForEach(oldImages.indices, id: \.self) { idx in
+                            ForEach(selectedScreen.images.indices, id: \.self) { idx in
                                 VStack(alignment: .leading) {
                                     ZStack {
                                         HStack {
@@ -99,9 +99,14 @@ struct ImageEditor: View {
                                                     .aspectRatio(contentMode: .fit)
                                                     .frame(width: 100, height: 100)
                                                 Spacer()
-                                                Text(":\tImage")
+                                                Text(":\tImage \(idx)")
                                             } else {
-                                                Text("Select Image \(idx) ")
+                                                Image(uiImage: selectedScreen.images[idx].image!)
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .frame(width: 100, height: 100)
+                                                Spacer()
+                                                Text(":\tImage \(idx)")
                                             }
                                             
                                         }
@@ -186,7 +191,7 @@ struct ImageEditor: View {
                 location = .init(x: geo.size.height / 2, y: geo.size.width / 2)
             }
             //Turned off other shapes.
-            .cropImagePicker(options: [.custom(.init(width: 200, height: 200))], show: $showingImagePicker, croppedImage: $croppedImage)
+            .cropImagePicker(options: [.custom(.init(width: 400, height: 400))], show: $showingImagePicker, croppedImage: $croppedImage)
         }
     }
     
