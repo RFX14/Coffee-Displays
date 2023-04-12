@@ -10,7 +10,7 @@ import UIKit
 
 struct Images: Identifiable, Hashable  {
     let id = UUID()
-    var title: String? = "Image"
+    var title: String? = "image"
     var position: Int? = 0
     var image: UIImage? = nil
 }

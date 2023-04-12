@@ -17,19 +17,20 @@ class ScreenManager: ObservableObject {
     private var db = Firestore.firestore()
     private var listener: ListenerRegistration?
     private var user: String = "test_acct"
+    private var imageLink: [UIImage: String] = [:]
     
+    /*
     func uploadChanges() {
         db.collection("users").document(user).updateData([
             "screens.\(screen)": screens
         ])
     }
+     */
     
     // Note: completion handler was used to make sure everthing was completed before the name sorting would be completed in the main view.
     func fetchAvailableScreens(completion: @escaping(() -> Void)) {
-        print("Fetching!!")
         //We going to wait for "fetchAvailableImages" and then run the stuff below
         fetchAvailableImages { fetchedImages in [self]
-            print("Returned info!!!! \(fetchedImages)")
             self.db.collection("users").document(self.user).getDocument { docSnapshot, err in
                 guard let doc = docSnapshot else {
                     print("Error fetching document: \(err!)")
@@ -126,11 +127,13 @@ class ScreenManager: ObservableObject {
                             let storageRef = Storage.storage().reference()
                             let fileRef = storageRef.child(image_link)
                             
+                            
                             fileRef.getData(maxSize: 5 * 1024 * 1024) { data, error in
                                 //Seems screen_1 is not gettting any images. firebase might not be set up right
                                 if error == nil && data != nil {
                                     let cur_image = UIImage(data: data!)
-                                
+                                    
+                                    self.imageLink[(cur_image ?? UIImage(named: "imageTest"))!] = image_link
                                     allImages[screensName]?.append(Images(title: image_name, position: position, image: cur_image))
                                     imageCounter[screensName]! += 1
                                     
@@ -170,14 +173,30 @@ class ScreenManager: ObservableObject {
     
 
     func createFirebaseTemplate(index: Int) {
-        var firebaseTemplate: [String: [String: Any]] = [:]
+        var firebaseTemplate: [String: [String: [String: Any]]] = [:]
         for currentScreen in screens {
             if firebaseTemplate[currentScreen.name] == nil {
                 firebaseTemplate[currentScreen.name] = [:]
             }
             
+            if firebaseTemplate[currentScreen.name]?["items"] == nil {
+                firebaseTemplate[currentScreen.name]?["items"] = [:]
+            }
+            
+            if firebaseTemplate[currentScreen.name]?["images"] == nil {
+                firebaseTemplate[currentScreen.name]?["images"] = [:]
+            }
+            
+            //if image exist in storage we will just use the url saved in the dictionary. Otherwise we will upload first to storage and then grab url.
             for curItem in currentScreen.items {
-                firebaseTemplate[currentScreen.name]?[curItem.title] = ["description": curItem.description ?? "N/A", "position": curItem.position, "price": curItem.price] as [String : Any]
+                firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = ["description": curItem.description, "position": curItem.position, "price": curItem.price]
+            }
+            for curImage in currentScreen.images {
+                if imageLink.keys.contains((curImage.image ?? UIImage(named: "imageTest"))!) {
+                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["image_link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!
+], "position": curImage.position]
+                }
+                //else we simply upload to firebase and get the new url if image is brand new.
             }
         }
         print(firebaseTemplate)
@@ -196,6 +215,7 @@ class ScreenManager: ObservableObject {
         }
     }
 }
+
 
 extension String {
     subscript(i: Int) -> String {

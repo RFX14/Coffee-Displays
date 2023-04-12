@@ -84,7 +84,8 @@ struct ImageEditor: View {
                             .onMove(perform: move)
                             .onDelete { indexSet in
                                 selectedScreen.items.remove(atOffsets: indexSet)
-                                manager.deleteItems(newScreen: selectedScreen)
+                                updateItemsWithChanges(screen: selectedScreen)
+                                //manager.deleteItems(newScreen: selectedScreen)
                             }
                         }
                         
@@ -98,17 +99,15 @@ struct ImageEditor: View {
                                                     .resizable()
                                                     .aspectRatio(contentMode: .fit)
                                                     .frame(width: 100, height: 100)
-                                                Spacer()
-                                                Text(":\tImage \(idx)")
+                                            
+                                                Text("\t\t\t:Image \(idx)")
                                             } else {
                                                 Image(uiImage: selectedScreen.images[idx].image!)
                                                     .resizable()
                                                     .aspectRatio(contentMode: .fit)
                                                     .frame(width: 100, height: 100)
-                                                Spacer()
-                                                Text(":\tImage \(idx)")
+                                                Text("\t\t:Image\(idx)")
                                             }
-                                            
                                         }
                                     }
                                     .onTapGesture {
@@ -117,6 +116,13 @@ struct ImageEditor: View {
                                 }
                             }
                             .onMove(perform: move)
+                        }
+                        .onChange(of: croppedImage) {newValue in
+                            print("Before \(selectedScreen)")
+                            //Save new image to manager.screens
+                            selectedScreen.images[selectedItemIdx].image = croppedImage
+                            print(selectedScreen)
+                            //updateItemsWithChanges(screen: selectedScreen)
                         }
                     }.onAppear {
                         print("selectScreen, \(selectedScreen)")
@@ -188,6 +194,7 @@ struct ImageEditor: View {
             }.onAppear {
                 manager.screen = selectedScreen.name
                 selectedScreen.items.sort(by: {$0.position < $1.position})
+                selectedScreen.images.sort(by: {$0.position ?? 0 < $1.position ?? 1})
                 location = .init(x: geo.size.height / 2, y: geo.size.width / 2)
             }
             //Turned off other shapes.
@@ -213,7 +220,8 @@ struct ImageEditor: View {
             //checks that the current screen is the only one that is updated with the new item.
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items.append(screen.items[(screen.items.count - 1)])
-                manager.createFirebaseTemplate(index: idx)
+                updateItemsWithChanges(screen: selectedScreen)
+                //manager.createFirebaseTemplate(index: idx)
                 print("\tAdd Succeded!!")
                 return
             }
