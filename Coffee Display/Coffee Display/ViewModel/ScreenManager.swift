@@ -28,8 +28,9 @@ class ScreenManager: ObservableObject {
     func fetchAvailableScreens(completion: @escaping(() -> Void)) {
         print("Fetching!!")
         //We going to wait for "fetchAvailableImages" and then run the stuff below
-        fetchAvailableImages { [self] in
-            db.collection("users").document(user).getDocument { [self] docSnapshot, err in
+        fetchAvailableImages { fetchedImages in [self]
+            print("Returned info!!!! \(fetchedImages)")
+            self.db.collection("users").document(self.user).getDocument { docSnapshot, err in
                 guard let doc = docSnapshot else {
                     print("Error fetching document: \(err!)")
                     return
@@ -57,6 +58,13 @@ class ScreenManager: ObservableObject {
                                 let position = item_values["position"] as? Int ?? 0
                                 
                                 items.append(.init(title: item_name, price: price, description: description, position: position))
+                                
+                                //Adding Images.
+                                for (curScreen, image_details) in fetchedImages {
+                                    for image_data in image_details {
+                                        images.append(.init(title: image_data.title, position: image_data.position, image: image_data.image))
+                                    }
+                                }
                             }
                         }
                     }
@@ -69,7 +77,7 @@ class ScreenManager: ObservableObject {
         }
     }
     
-    func fetchAvailableImages(completion: @escaping(() -> Void)) {
+    func fetchAvailableImages(completion: @escaping(([String: [Images]]) -> ())) {
         db.collection("users").document(user).getDocument { [self] docSnapshot, err in
             guard let doc = docSnapshot else {
                 print("Error fetching document: \(err!)")
@@ -123,7 +131,6 @@ class ScreenManager: ObservableObject {
                                 
                                     allImages[screensName]?.append(Images(title: image_name, position: position, image: cur_image))
                                     imageCounter[screensName]! += 1
-                                    print(allImages, imageCounter)
                                     
                                     for (curScreen, _) in allImages {
                                         if allImages[curScreen]?.count == imageCounter[curScreen] {
@@ -131,15 +138,13 @@ class ScreenManager: ObservableObject {
                                         } else if allImages[curScreen]?.count != imageCounter[curScreen] {
                                             isAllImagesDownloaded[screensName] = false
                                         }
-                                        print(screensName, isAllImagesDownloaded)
                                     }
                                     
                                     if isAllImagesDownloaded.allSatisfy({$0.value == true}) {
-                                        print("completed")
-                                        completion()
+                                        completion(allImages)
                                     }
                                 } else if data == nil {
-                                    print("NO DATA")
+                                    print("No Data")
                                 }
                             }
                         }
