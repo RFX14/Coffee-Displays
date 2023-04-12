@@ -189,18 +189,53 @@ class ScreenManager: ObservableObject {
             
             //if image exist in storage we will just use the url saved in the dictionary. Otherwise we will upload first to storage and then grab url.
             for curItem in currentScreen.items {
-                firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = ["description": curItem.description, "position": curItem.position, "price": curItem.price]
+                firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = ["description": curItem.description as Any, "position": curItem.position, "price": curItem.price] as [String : Any]
             }
             for curImage in currentScreen.images {
                 if imageLink.keys.contains((curImage.image ?? UIImage(named: "imageTest"))!) {
-                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["image_link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!
-], "position": curImage.position]
+                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["image_link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
+                } else {
+                    uploadImage(newImage: curImage.image!, completion: { newUrl in
+                        //TO DO: Look into how often to delete photos from firebase
+                        //Saves new image & url in dictionary
+                        self.imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] = newUrl
+                        
+                        if self.imageLink.keys.contains((curImage.image ?? UIImage(named: "imageTest"))!) {
+                            firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["image_link": self.imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
+                        } else {
+                            print("something went wrong")
+                        }
+                        print("image uploaded:\t\(newUrl)")
+                    })
+    
                 }
-                //else we simply upload to firebase and get the new url if image is brand new.
             }
         }
         print(firebaseTemplate)
-        updateFirebase(firebaseTemplate: firebaseTemplate)
+        //updateFirebase(firebaseTemplate: firebaseTemplate)
+    }
+    
+    func uploadImage(newImage: UIImage, completion: @escaping((String) -> ())) {
+        guard newImage != nil else {
+            return
+        }
+        
+        let storageRef = Storage.storage().reference()
+        
+        let imageData = newImage.jpegData(compressionQuality: 0.8)
+        
+        guard imageData != nil else {
+            return
+        }
+        let path = "images/\(UUID().uuidString).jpg"
+        let fileRef = storageRef.child(path)
+        
+        let uploadTask = fileRef.putData(imageData!, metadata: nil) { metadata, error in
+            
+            if error == nil && metadata != nil {
+                completion(path)
+            }
+        }
     }
     
     func updateFirebase(firebaseTemplate: [String: [String: Any]] ) {

@@ -14,6 +14,7 @@ struct ImageEditor: View {
     
     @State private var oldItems: [BasicItem] = []
     @State private var selectedItemIdx: Int = 0
+    @State private var selectedImageIdx: Int = 0
     @State private var showSharedMenu = false
     @State private var createNewItem = false
     
@@ -112,17 +113,17 @@ struct ImageEditor: View {
                                     }
                                     .onTapGesture {
                                         showingImagePicker = true
+                                        selectedImageIdx = idx
                                     }
                                 }
                             }
                             .onMove(perform: move)
                         }
-                        .onChange(of: croppedImage) {newValue in
+                        .onChange(of: croppedImage) { newValue in
                             print("Before \(selectedScreen)")
                             //Save new image to manager.screens
                             selectedScreen.images[selectedItemIdx].image = croppedImage
-                            print(selectedScreen)
-                            //updateItemsWithChanges(screen: selectedScreen)
+                            updateItemsWithChanges(screen: selectedScreen)
                         }
                     }.onAppear {
                         print("selectScreen, \(selectedScreen)")
@@ -246,6 +247,7 @@ struct ImageEditor: View {
         for idx in manager.screens.indices {
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
+                manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
                 //update firebase with changes
                 manager.createFirebaseTemplate(index: idx)
                 print("\tUpdate Succeded!!")
