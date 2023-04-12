@@ -121,9 +121,9 @@ struct ImageEditor: View {
                     }.onAppear {
                         print("selectScreen, \(selectedScreen)")
                         print("View Appearing!")
-                        print("\t\(selectedScreen.items.first?.title)")
+                        //print("\t\(selectedScreen.items.first?.title)")
                         oldItems = selectedScreen.items
-                        print("\tOld Items Stored")
+                        //print("\tOld Items Stored")
                     }.onDisappear {
                         print("View Disappearing!")
                         selectedScreen.items = oldItems

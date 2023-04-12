@@ -62,7 +62,9 @@ class ScreenManager: ObservableObject {
                                 //Adding Images.
                                 for (curScreen, image_details) in fetchedImages {
                                     for image_data in image_details {
-                                        images.append(.init(title: image_data.title, position: image_data.position, image: image_data.image))
+                                        if images.last?.position != image_data.position && curScreen == screens {
+                                            images.append(.init(title: image_data.title, position: image_data.position, image: image_data.image))
+                                        }
                                     }
                                 }
                             }
