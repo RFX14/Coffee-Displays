@@ -132,12 +132,15 @@ struct ImageEditor: View {
                         oldItems = selectedScreen.items
                         //print("\tOld Items Stored")
                     }.onDisappear {
+                        //will probably delete this
+                        /*
                         print("View Disappearing!")
                         selectedScreen.items = oldItems
                         updateFullArrayWithChanges(screen: selectedScreen)
                         print("\t\(selectedScreen.items.first?.title)")
                         print("\t\(oldItems.first?.title)")
                         print("\tItems Reset")
+                         */
                     }
                 }
             }.toolbar {

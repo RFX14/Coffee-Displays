@@ -120,20 +120,19 @@ class ScreenManager: ObservableObject {
                         let image_details = details as? [String: [String: Any]] ?? [:]
                         
                         for (image_name, image_values) in image_details {
-                            
-                            let image_link = image_values["image_link"] as? String ?? ""
+                            let image_link = image_values["link"] as? String ?? ""
                             let position = image_values["position"] as? Int ?? 0
                             
+                            
                             let storageRef = Storage.storage().reference()
-                            let fileRef = storageRef.child(image_link)
+                            let httpsReference = storageRef.storage.reference(forURL: image_link)
+
                             
                             
-                            fileRef.getData(maxSize: 5 * 1024 * 1024) { data, error in
-                                //Seems screen_1 is not gettting any images. firebase might not be set up right
+                            httpsReference.getData(maxSize: 5 * 1024 * 1024) { data, error in
                                 if error == nil && data != nil {
                                     let cur_image = UIImage(data: data!)
-                                    
-                                    self.imageLink[(cur_image ?? UIImage(named: "imageTest"))!] = image_link
+                                    self.imageLink[cur_image ?? UIImage(named: "imageTest.png")!] = image_link
                                     allImages[screensName]?.append(Images(title: image_name, position: position, image: cur_image))
                                     imageCounter[screensName]! += 1
                                     
@@ -187,13 +186,13 @@ class ScreenManager: ObservableObject {
                 firebaseTemplate[currentScreen.name]?["images"] = [:]
             }
             
-            //if image exist in storage we will just use the url saved in the dictionary. Otherwise we will upload first to storage and then grab url.
+            //if image exist in storage we will just use the url saved in the dictionary. Otherwise we will upload the image to storage and then grab url.
             for curItem in currentScreen.items {
                 firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = ["description": curItem.description as Any, "position": curItem.position, "price": curItem.price] as [String : Any]
             }
             for curImage in currentScreen.images {
                 if imageLink.keys.contains((curImage.image ?? UIImage(named: "imageTest"))!) {
-                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["image_link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
+                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
                 } else {
                     uploadImage(newImage: curImage.image!, completion: { newUrl in
                         //TO DO: Look into how often to delete photos from firebase
@@ -201,7 +200,7 @@ class ScreenManager: ObservableObject {
                         self.imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] = newUrl
                         
                         if self.imageLink.keys.contains((curImage.image ?? UIImage(named: "imageTest"))!) {
-                            firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["image_link": self.imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
+                            firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": self.imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
                         } else {
                             print("something went wrong")
                         }
@@ -212,7 +211,7 @@ class ScreenManager: ObservableObject {
             }
         }
         print(firebaseTemplate)
-        //updateFirebase(firebaseTemplate: firebaseTemplate)
+        updateFirebase(firebaseTemplate: firebaseTemplate)
     }
     
     func uploadImage(newImage: UIImage, completion: @escaping((String) -> ())) {
