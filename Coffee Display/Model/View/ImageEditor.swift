@@ -119,11 +119,18 @@ struct ImageEditor: View {
                             }
                             .onMove(perform: move)
                         }
-                        .onChange(of: croppedImage) { newValue in
-                            print("Before \(selectedScreen)")
-                            //Save new image to manager.screens
-                            selectedScreen.images[selectedItemIdx].image = croppedImage
-                            updateItemsWithChanges(screen: selectedScreen)
+                        .onChange(of: croppedImage) { newImage in
+                            //call uploadImage which will return new link.
+                            manager.uploadImage(newImage: newImage!) { imagePath in
+                                manager.fetchImageURL(imagePath: imagePath) { newURL in
+                                    //updates the imageLink Dictionary
+                                    manager.imageLink[newImage!] = newURL
+                                    //Save new image to manager.screens
+                                    selectedScreen.images[selectedItemIdx].image = croppedImage
+                                    //all that is left is update the firbase data base
+                                    updateItemsWithChanges(screen: selectedScreen)
+                                }
+                            }
                         }
                     }.onAppear {
                         print("selectScreen, \(selectedScreen)")
@@ -251,6 +258,7 @@ struct ImageEditor: View {
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
                 manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
+                print("Here \(manager.screens[idx])")
                 //update firebase with changes
                 manager.createFirebaseTemplate(index: idx)
                 print("\tUpdate Succeded!!")

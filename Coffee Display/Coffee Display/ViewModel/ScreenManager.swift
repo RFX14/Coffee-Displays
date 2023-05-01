@@ -12,12 +12,13 @@ import FirebaseStorage
 class ScreenManager: ObservableObject {
     @Published var screens: [Screen] = []
     @Published var screen: String = "Austin"
-    private var changes: [String: Any] = [:]
+    @Published var imageLink: [UIImage: String] = [:]
     
+    private var changes: [String: Any] = [:]
     private var db = Firestore.firestore()
     private var listener: ListenerRegistration?
     private var user: String = "test_acct"
-    private var imageLink: [UIImage: String] = [:]
+    
     
     /*
     func uploadChanges() {
@@ -213,7 +214,7 @@ class ScreenManager: ObservableObject {
         print(firebaseTemplate)
         updateFirebase(firebaseTemplate: firebaseTemplate)
     }
-    
+    //Whats gonna happen is we upload the image to firebase and the retrieve the image link and then return that as string. which will then be saved to firebase. Note need to make sure if image already exist in storage, if so then we just return the link that is found globally.
     func uploadImage(newImage: UIImage, completion: @escaping((String) -> ())) {
         guard newImage != nil else {
             return
@@ -234,6 +235,23 @@ class ScreenManager: ObservableObject {
             if error == nil && metadata != nil {
                 completion(path)
             }
+        }
+    }
+    
+    func fetchImageURL(imagePath: String,completion: @escaping((String) -> ())) {
+        // Create a reference to the file you want to download
+        let storageRef = Storage.storage().reference()
+        let fileRef = storageRef.child(imagePath)
+
+        // Fetch the download URL
+        fileRef.downloadURL { url, error in
+          if let error = error {
+            // Handle any errors
+              print("something went wrong")
+          } else {
+              let newURL = url?.absoluteString
+              completion(newURL ?? "N/A")
+          }
         }
     }
     
