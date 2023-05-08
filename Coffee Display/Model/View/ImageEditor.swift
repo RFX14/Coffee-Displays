@@ -133,7 +133,7 @@ struct ImageEditor: View {
                             }
                         }
                     }.onAppear {
-                        print("selectScreen, \(selectedScreen)")
+                        //print("selectScreen, \(selectedScreen)")
                         print("View Appearing!")
                         //print("\t\(selectedScreen.items.first?.title)")
                         oldItems = selectedScreen.items
@@ -216,13 +216,13 @@ struct ImageEditor: View {
     func move(from source: IndexSet, to destination: Int) {
         selectedScreen.items.move(fromOffsets: source, toOffset: destination)
         updatePositionIndexes()
+        updateFullArrayWithChanges(screen: selectedScreen)
     }
     
     func updatePositionIndexes() {
-        for i in 0..<selectedScreen.items.count {
-            selectedScreen.items[i].position = i
+        for idx in 0..<selectedScreen.items.count {
+            selectedScreen.items[idx].position = idx
         }
-        
         selectedScreen.items.sort(by: {$0.position < $1.position})
     }
     
@@ -239,15 +239,18 @@ struct ImageEditor: View {
         }
         print("\tAdd Failed")
     }
-    
+    //is called with view disappears
     func updateFullArrayWithChanges(screen: Screen) {
         for idx in manager.screens.indices {
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items = screen.items
-                
+                manager.screens[idx].images = screen.images
                 print("\tUpdate Succeded!!")
-                return
             }
+        }
+        
+        for idx in manager.screens.indices {
+            manager.createFirebaseTemplate(index: idx)
         }
         
         print("\tUpdate Failed")
@@ -258,14 +261,13 @@ struct ImageEditor: View {
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
                 manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
-                print("Here \(manager.screens[idx])")
                 //update firebase with changes
                 manager.createFirebaseTemplate(index: idx)
                 print("\tUpdate Succeded!!")
                 return
             }
         }
-        
+
         print("\tUpdate Failed")
     }
 }

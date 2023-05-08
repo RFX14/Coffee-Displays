@@ -11,7 +11,8 @@ import UIKit
 struct Images: Identifiable, Hashable  {
     let id = UUID()
     var title: String? = "image"
+    var link: String? = "N/A"
     var position: Int? = 0
-    var image: UIImage? = nil
+    var image: UIImage? = UIImage(named: "imageTest.png")!
 }
 

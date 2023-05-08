@@ -8,12 +8,14 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseStorage
-
+@MainActor
 class ScreenManager: ObservableObject {
     @Published var screens: [Screen] = []
     @Published var screen: String = "Austin"
     @Published var imageLink: [UIImage: String] = [:]
     
+    private var links: [String] = []
+    private var LinkWithImage: [String: UIImage] = [:]
     private var changes: [String: Any] = [:]
     private var db = Firestore.firestore()
     private var listener: ListenerRegistration?
@@ -29,60 +31,9 @@ class ScreenManager: ObservableObject {
      */
     
     // Note: completion handler was used to make sure everthing was completed before the name sorting would be completed in the main view.
+    //Current Issue: when ever I add another image to a screen it messes up the fetching and creates duplicate screens.
     func fetchAvailableScreens(completion: @escaping(() -> Void)) {
-        //We going to wait for "fetchAvailableImages" and then run the stuff below
-        fetchAvailableImages { fetchedImages in [self]
-            self.db.collection("users").document(self.user).getDocument { docSnapshot, err in
-                guard let doc = docSnapshot else {
-                    print("Error fetching document: \(err!)")
-                    return
-                }
-                
-                guard let data = doc.data() else {
-                    print("Error fetching data: \(err!)")
-                    return
-                }
-                let screens = data["screens"] as? [String: Any] ?? [:]
-                
-                // Items
-                for (screens, item) in screens {
-                    //print(item)
-                    let item = item as? [String: Any] ?? [:]
-                    var items: [BasicItem] = []
-                    var images: [Images] = []
-                    
-                    for (title, details) in item {
-                         if title == "items" {
-                            let item_details = details as? [String: [String: Any]] ?? [:]
-                            for (item_name, item_values) in item_details {
-                                let price = item_values["price"] as? String ?? ""
-                                let description = item_values["description"] as? String ?? ""
-                                let position = item_values["position"] as? Int ?? 0
-                                
-                                items.append(.init(title: item_name, price: price, description: description, position: position))
-                                
-                                //Adding Images.
-                                for (curScreen, image_details) in fetchedImages {
-                                    for image_data in image_details {
-                                        if images.last?.position != image_data.position && curScreen == screens {
-                                            images.append(.init(title: image_data.title, position: image_data.position, image: image_data.image))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    self.screens.append(Screen(name: screens, items: items, images: images))
-                }
-                print(self.screens)
-                completion()
-            }
-        }
-    }
-    
-    func fetchAvailableImages(completion: @escaping(([String: [Images]]) -> ())) {
-        db.collection("users").document(user).getDocument { [self] docSnapshot, err in
+        self.db.collection("users").document(self.user).getDocument { docSnapshot, err in
             guard let doc = docSnapshot else {
                 print("Error fetching document: \(err!)")
                 return
@@ -92,71 +43,66 @@ class ScreenManager: ObservableObject {
                 print("Error fetching data: \(err!)")
                 return
             }
-            
             let screens = data["screens"] as? [String: Any] ?? [:]
-            var allImages: [String: [Images]] = [:]
-            var imageCounter: [String: Int] = [:]
-            var isAllImagesDownloaded: [String: Bool] = [:]
             
-            for (screensName, item) in screens {
-                
+            // Items
+            for (screens, item) in screens {
+                //print(item)
                 let item = item as? [String: Any] ?? [:]
-                
-                
-                if allImages[screensName] == nil {
-                    allImages[screensName] = []
-                }
-                
-                if imageCounter[screensName] == nil {
-                    imageCounter[screensName] = 0
-                }
-                
-                if isAllImagesDownloaded[screensName] == nil {
-                    isAllImagesDownloaded[screensName] = false
-                }
+                var items: [BasicItem] = []
+                var images: [Images] = []
                 
                 for (title, details) in item {
-                    
+                     if title == "items" {
+                        let item_details = details as? [String: [String: Any]] ?? [:]
+                        for (item_name, item_values) in item_details {
+                            let price = item_values["price"] as? String ?? ""
+                            let description = item_values["description"] as? String ?? ""
+                            let position = item_values["position"] as? Int ?? 0
+                            
+                            items.append(.init(title: item_name, price: price, description: description, position: position))
+                            
+                        }
+                    }
+                }
+                
+                //Images
+                for (title, details) in item {
                     if title == "images" {
                         let image_details = details as? [String: [String: Any]] ?? [:]
                         
                         for (image_name, image_values) in image_details {
                             let image_link = image_values["link"] as? String ?? ""
                             let position = image_values["position"] as? Int ?? 0
-                            
-                            
-                            let storageRef = Storage.storage().reference()
-                            let httpsReference = storageRef.storage.reference(forURL: image_link)
-
-                            
-                            
-                            httpsReference.getData(maxSize: 5 * 1024 * 1024) { data, error in
-                                if error == nil && data != nil {
-                                    let cur_image = UIImage(data: data!)
-                                    self.imageLink[cur_image ?? UIImage(named: "imageTest.png")!] = image_link
-                                    allImages[screensName]?.append(Images(title: image_name, position: position, image: cur_image))
-                                    imageCounter[screensName]! += 1
-                                    
-                                    for (curScreen, _) in allImages {
-                                        if allImages[curScreen]?.count == imageCounter[curScreen] {
-                                            isAllImagesDownloaded[screensName] = true
-                                        } else if allImages[curScreen]?.count != imageCounter[curScreen] {
-                                            isAllImagesDownloaded[screensName] = false
-                                        }
-                                    }
-                                    
-                                    if isAllImagesDownloaded.allSatisfy({$0.value == true}) {
-                                        completion(allImages)
-                                    }
-                                } else if data == nil {
-                                    print("No Data")
-                                }
-                            }
+                            images.append(.init(title: image_name, link: image_link, position: position, image: UIImage(named: "imageTest.png")!))
+                            self.links.append(image_link)
                         }
+                    }
+                }
+                self.screens.append(Screen(name: screens, items: items, images: images))
+            }
+            
+            // New way grab all the images based on list of links and then store it in dictionary link: UIImage.  in the beginning do link: Nil
+            //its connecting but finding no data....glitch?
+            print("function active")
+            let storageRef = Storage.storage().reference()
+            for curLink in self.links {
+                let httpsReference = storageRef.storage.reference(forURL: curLink)
 
+                httpsReference.getData(maxSize: 5 * 1024 * 1024) { data, error in
+                    //when images is found we save to newScreen
+                    if error == nil && data != nil {
+                        print("active")
+                        DispatchQueue.main.async {
+                            let cur_image = UIImage(data: data!) ?? UIImage(named: "imageTest.png")!
+                            self.LinkWithImage[curLink] = cur_image
+                        }
+                    } else if data == nil {
+                        print("No Data")
                     }
                 }
             }
+            completion()
         }
     }
     
@@ -165,7 +111,7 @@ class ScreenManager: ObservableObject {
             if screens[idx].id == newScreen.id {
                 //add the newScreen in manager Screens with the same index
                 screens[idx] = newScreen
-                print(screens)
+                //print(screens)
                 createFirebaseTemplate(index: idx)
             }
         }
@@ -187,16 +133,15 @@ class ScreenManager: ObservableObject {
                 firebaseTemplate[currentScreen.name]?["images"] = [:]
             }
             
-            //if image exist in storage we will just use the url saved in the dictionary. Otherwise we will upload the image to storage and then grab url.
             for curItem in currentScreen.items {
                 firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = ["description": curItem.description as Any, "position": curItem.position, "price": curItem.price] as [String : Any]
             }
+            //if image exist in storage we will just use the url saved in the dictionary. Otherwise we will upload the image to storage and then grab url.
             for curImage in currentScreen.images {
                 if imageLink.keys.contains((curImage.image ?? UIImage(named: "imageTest"))!) {
                     firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
                 } else {
                     uploadImage(newImage: curImage.image!, completion: { newUrl in
-                        //TO DO: Look into how often to delete photos from firebase
                         //Saves new image & url in dictionary
                         self.imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] = newUrl
                         
@@ -205,13 +150,13 @@ class ScreenManager: ObservableObject {
                         } else {
                             print("something went wrong")
                         }
-                        print("image uploaded:\t\(newUrl)")
+                        //print("image uploaded:\t\(newUrl)")
                     })
     
                 }
             }
         }
-        print(firebaseTemplate)
+        //print(firebaseTemplate)
         updateFirebase(firebaseTemplate: firebaseTemplate)
     }
     //Whats gonna happen is we upload the image to firebase and the retrieve the image link and then return that as string. which will then be saved to firebase. Note need to make sure if image already exist in storage, if so then we just return the link that is found globally.
