@@ -15,7 +15,7 @@ class ScreenManager: ObservableObject {
     @Published var imageLink: [UIImage: String] = [:]
     
     private var links: [String] = []
-    private var LinkWithImage: [String: UIImage] = [:]
+    private var linkWithImage: [String: UIImage] = [:]
     private var changes: [String: Any] = [:]
     private var db = Firestore.firestore()
     private var listener: ListenerRegistration?
@@ -34,6 +34,7 @@ class ScreenManager: ObservableObject {
     //Current Issue: when ever I add another image to a screen it messes up the fetching and creates duplicate screens.
     func fetchAvailableScreens(completion: @escaping(() -> Void)) {
         self.db.collection("users").document(self.user).getDocument { docSnapshot, err in
+            print("grab data")
             guard let doc = docSnapshot else {
                 print("Error fetching document: \(err!)")
                 return
@@ -43,10 +44,10 @@ class ScreenManager: ObservableObject {
                 print("Error fetching data: \(err!)")
                 return
             }
-            let screens = data["screens"] as? [String: Any] ?? [:]
+            let allScreens = data["screens"] as? [String: Any] ?? [:]
             
             // Items
-            for (screens, item) in screens {
+            for (curScreen, item) in allScreens {
                 //print(item)
                 let item = item as? [String: Any] ?? [:]
                 var items: [BasicItem] = []
@@ -65,7 +66,6 @@ class ScreenManager: ObservableObject {
                         }
                     }
                 }
-                
                 //Images
                 for (title, details) in item {
                     if title == "images" {
@@ -79,29 +79,58 @@ class ScreenManager: ObservableObject {
                         }
                     }
                 }
-                self.screens.append(Screen(name: screens, items: items, images: images))
+                
+                self.screens.append(Screen(name: curScreen, items: items, images: images))
             }
-            
-            // New way grab all the images based on list of links and then store it in dictionary link: UIImage.  in the beginning do link: Nil
-            //its connecting but finding no data....glitch?
-            print("function active")
-            let storageRef = Storage.storage().reference()
-            for curLink in self.links {
-                let httpsReference = storageRef.storage.reference(forURL: curLink)
-
-                httpsReference.getData(maxSize: 5 * 1024 * 1024) { data, error in
-                    //when images is found we save to newScreen
-                    if error == nil && data != nil {
-                        print("active")
+            completion()
+        }
+    }
+    func fetchImages(completion: @escaping (() -> Void)) {
+        print("fetchImages")
+        let storageRef = Storage.storage().reference()
+        let group = DispatchGroup() // create a dispatch group
+        for link in self.links {
+            group.enter() // enter the group for each request
+            let httpsReference = storageRef.storage.reference(forURL: link)
+            httpsReference.getData(maxSize: 5 * 1024 * 1024) { data, error in
+                if let error = error {
+                    print(error.localizedDescription)
+                } else if let data = data {
+                    if let image = UIImage(data: data) {
+                        self.linkWithImage[link] = image
+                    } else {
+                        print("Invalid image data")
+                    }
+                } else {
+                    print("No data received")
+                }
+                group.leave() // leave the group when the request completes
+            }
+        }
+        group.notify(queue: DispatchQueue.main) {
+            print(self.linkWithImage)
+            completion() // call the completion handler when all requests have completed
+        }
+    }
+    
+    func addNewImages(completion: @escaping (() -> Void)) {
+        print("add new images")
+        let group = DispatchGroup()
+        for (i, curScreen) in self.screens.enumerated() {
+            let images = curScreen.images
+            for (j, curImage) in images.enumerated() {
+                if let link = curImage.link {
+                    if let newImage = self.linkWithImage[link] {
+                        group.enter()
                         DispatchQueue.main.async {
-                            let cur_image = UIImage(data: data!) ?? UIImage(named: "imageTest.png")!
-                            self.LinkWithImage[curLink] = cur_image
+                            self.screens[i].images[j].image = newImage
+                            group.leave()
                         }
-                    } else if data == nil {
-                        print("No Data")
                     }
                 }
             }
+        }
+        group.notify(queue: DispatchQueue.main) {
             completion()
         }
     }

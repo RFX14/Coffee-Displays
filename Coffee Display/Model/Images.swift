@@ -13,6 +13,6 @@ struct Images: Identifiable, Hashable  {
     var title: String? = "image"
     var link: String? = "N/A"
     var position: Int? = 0
-    var image: UIImage? = UIImage(named: "imageTest.png")!
+    var image: UIImage? = UIImage(named: "imageTest.png")
 }
 

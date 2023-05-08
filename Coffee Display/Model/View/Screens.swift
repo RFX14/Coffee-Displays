@@ -26,7 +26,11 @@ struct Screens: View {
         }
         .onAppear {
             manager.fetchAvailableScreens {
-                manager.screens.sort(by: {$0.name < $1.name})
+                manager.fetchImages {
+                    manager.addNewImages {
+                        manager.screens.sort(by: {$0.name < $1.name})
+                    }
+                }
             }
         }
     }
