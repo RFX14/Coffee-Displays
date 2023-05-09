@@ -122,14 +122,12 @@ struct ImageEditor: View {
                         .onChange(of: croppedImage) { newImage in
                             //call uploadImage which will return new link.
                             manager.uploadImage(newImage: newImage!) { imagePath in
-                                manager.fetchImageURL(imagePath: imagePath) { newURL in
-                                    //updates the imageLink Dictionary
-                                    manager.imageLink[newImage!] = newURL
-                                    //Save new image to manager.screens
-                                    selectedScreen.images[selectedItemIdx].image = croppedImage
-                                    //all that is left is update the firbase data base
-                                    updateItemsWithChanges(screen: selectedScreen)
-                                }
+                                //updates the imageLink Dictionary
+                                manager.imageLink[newImage!] = imagePath
+                                //Save new image to manager.screens
+                                selectedScreen.images[selectedItemIdx].image = croppedImage
+                                //all that is left is update the firbase data base
+                                updateItemsWithChanges(screen: selectedScreen)
                             }
                         }
                     }.onAppear {

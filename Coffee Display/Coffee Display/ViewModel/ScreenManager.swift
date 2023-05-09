@@ -188,6 +188,61 @@ class ScreenManager: ObservableObject {
         //print(firebaseTemplate)
         updateFirebase(firebaseTemplate: firebaseTemplate)
     }
+    
+    func uploadImage(newImage: UIImage, completion: @escaping ((String) -> ())) {
+        guard let imageData = newImage.jpegData(compressionQuality: 0.8) else {
+            return
+        }
+        
+        let storageRef = Storage.storage().reference()
+        let path = "images/\(UUID().uuidString).jpg"
+        let fileRef = storageRef.child(path)
+        
+        // Check if the file already exists
+        fileRef.listAll { result, error in
+            if let error = error {
+                // Handle error
+                print("Error listing files: \(error.localizedDescription)")
+                return
+            }
+            
+            let files = result?.items
+            if files!.count > 0 {
+                // File already exists, return its download URL
+                files![0].downloadURL { url, error in
+                    if let error = error {
+                        // Handle error
+                        print("Error getting download URL: \(error.localizedDescription)")
+                        return
+                    }
+                    
+                    if let url = url {
+                        completion(url.absoluteString)
+                    }
+                }
+            } else {
+                // File does not exist, upload the new file
+                let uploadTask = fileRef.putData(imageData, metadata: nil) { metadata, error in
+                    if error == nil && metadata != nil {
+                        fileRef.downloadURL { url, error in
+                            if let error = error {
+                                // Handle error
+                                print("Error getting download URL: \(error.localizedDescription)")
+                                return
+                            }
+                            
+                            if let url = url {
+                                completion(url.absoluteString)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    
+    /*
     //Whats gonna happen is we upload the image to firebase and the retrieve the image link and then return that as string. which will then be saved to firebase. Note need to make sure if image already exist in storage, if so then we just return the link that is found globally.
     func uploadImage(newImage: UIImage, completion: @escaping((String) -> ())) {
         guard newImage != nil else {
@@ -211,23 +266,7 @@ class ScreenManager: ObservableObject {
             }
         }
     }
-    
-    func fetchImageURL(imagePath: String,completion: @escaping((String) -> ())) {
-        // Create a reference to the file you want to download
-        let storageRef = Storage.storage().reference()
-        let fileRef = storageRef.child(imagePath)
-
-        // Fetch the download URL
-        fileRef.downloadURL { url, error in
-          if let error = error {
-            // Handle any errors
-              print("something went wrong")
-          } else {
-              let newURL = url?.absoluteString
-              completion(newURL ?? "N/A")
-          }
-        }
-    }
+    */
     
     func updateFirebase(firebaseTemplate: [String: [String: Any]] ) {
         db.collection("users").document(user).setData([
