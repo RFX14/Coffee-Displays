@@ -24,6 +24,7 @@
 		9A74292E29C9185E00844A62 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 9A74292D29C9185E00844A62 /* FirebaseFirestore */; };
 		9A74293429CA054700844A62 /* BasicItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A74293329CA054700844A62 /* BasicItem.swift */; };
 		9AA762712A09883C0063CF43 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9AA762702A09883C0063CF43 /* GoogleService-Info.plist */; };
+		9AA762732A0D479E0063CF43 /* UseCroppedImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA762722A0D479E0063CF43 /* UseCroppedImage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 		9A74292829C9146F00844A62 /* ScreenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManager.swift; sourceTree = "<group>"; };
 		9A74293329CA054700844A62 /* BasicItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicItem.swift; sourceTree = "<group>"; };
 		9AA762702A09883C0063CF43 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		9AA762722A0D479E0063CF43 /* UseCroppedImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UseCroppedImage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +98,7 @@
 				9A52BDE329CA5D8C0089553B /* Screen.swift */,
 				9A52967129DF615500D32B3E /* Crop.swift */,
 				9A2D039429E09DFD006139DF /* Images.swift */,
+				9AA762722A0D479E0063CF43 /* UseCroppedImage.swift */,
 			);
 			name = Model;
 			path = ../Model;
@@ -219,6 +222,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9A52BDE629CA69140089553B /* ImageEditor.swift in Sources */,
+				9AA762732A0D479E0063CF43 /* UseCroppedImage.swift in Sources */,
 				9A52967229DF615500D32B3E /* Crop.swift in Sources */,
 				9A507AAF29F620DD00EEBA3C /* TestManager.swift in Sources */,
 				9A52BDE429CA5D8C0089553B /* Screen.swift in Sources */,

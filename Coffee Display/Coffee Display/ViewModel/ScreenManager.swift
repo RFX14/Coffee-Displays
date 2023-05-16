@@ -163,30 +163,52 @@ class ScreenManager: ObservableObject {
             }
             
             for curItem in currentScreen.items {
-                firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = ["description": curItem.description as Any, "position": curItem.position, "price": curItem.price] as [String : Any]
+                firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = [
+                    "description": curItem.description as Any,
+                    "position": curItem.position,
+                    "price": curItem.price
+                ]
             }
-            //if image exist in storage we will just use the url saved in the dictionary. Otherwise we will upload the image to storage and then grab url.
+            
+            let group = DispatchGroup()
+            
             for curImage in currentScreen.images {
-                if imageLink.keys.contains((curImage.image ?? UIImage(named: "imageTest"))!) {
-                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
+                group.enter()
+                
+                if let image = curImage.image,
+                   let imageKey = imageLink.keys.first(where: { $0 == image }),
+                   let imageUrl = imageLink[imageKey] {
+                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = [
+                        "link": imageUrl,
+                        "position": curImage.position
+                    ]
+                    group.leave()
                 } else {
-                    uploadImage(newImage: curImage.image!, completion: { newUrl in
-                        //Saves new image & url in dictionary
-                        self.imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] = newUrl
-                        
-                        if self.imageLink.keys.contains((curImage.image ?? UIImage(named: "imageTest"))!) {
-                            firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": self.imageLink[(curImage.image ?? UIImage(named: "imageTest"))!] as Any, "position": curImage.position as Any]
-                        } else {
-                            print("something went wrong")
+                    uploadImage(newImage: curImage.image ?? UIImage(named: "imageTest")!) { [weak self] newUrl in
+                        guard let self = self else {
+                            group.leave()
+                            return
                         }
-                        //print("image uploaded:\t\(newUrl)")
-                    })
-    
+                        
+                        self.imageLink[curImage.image ?? UIImage(named: "imageTest")!] = newUrl
+                        
+                        if let imageKey = self.imageLink.keys.first(where: { $0 == curImage.image }),
+                           let imageUrl = self.imageLink[imageKey] {
+                            firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = [
+                                "link": imageUrl,
+                                "position": curImage.position
+                            ]
+                        }
+                        
+                        group.leave()
+                    }
                 }
             }
+            
+            group.notify(queue: .main) {
+                self.updateFirebase(firebaseTemplate: firebaseTemplate)
+            }
         }
-        //print(firebaseTemplate)
-        updateFirebase(firebaseTemplate: firebaseTemplate)
     }
     
     func uploadImage(newImage: UIImage, completion: @escaping ((String) -> ())) {

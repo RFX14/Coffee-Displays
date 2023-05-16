@@ -32,7 +32,7 @@ struct ImageEditor: View {
     
     //Image variables
     @State private var showingImagePicker = false
-    @State private var croppedImage: UIImage?
+    @State private var croppedImage: UIImage? = nil
     @State private var oldImages = [1]
     
     /*
@@ -57,6 +57,7 @@ struct ImageEditor: View {
             }
     }
     */
+    //some how using a dictionary to save every unique image with the index...However before we had the issue of the screen not working...can't we just update Screens with the new image and thats it? so like save it first and then loop normally while displaying information. But what about cropped image? I mean we can still use it. Just first save new cropped image to screen, then upload and then reset cropped image to nil....but will that trigger the action again? lets try...
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -95,20 +96,13 @@ struct ImageEditor: View {
                                 VStack(alignment: .leading) {
                                     ZStack {
                                         HStack {
-                                            if let croppedImage {
-                                                Image(uiImage: croppedImage)
+                                            if let image = selectedScreen.images[idx].image {
+                                                Image(uiImage: image)
                                                     .resizable()
                                                     .aspectRatio(contentMode: .fit)
                                                     .frame(width: 100, height: 100)
-                                            
-                                                Text("\t\t\t:Image \(idx)")
-                                            } else {
-                                                Image(uiImage: selectedScreen.images[idx].image!)
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                    .frame(width: 100, height: 100)
-                                                Text("\t\t:Image\(idx)")
                                             }
+                                            Text("\t\t\t:Image \(idx)")
                                         }
                                     }
                                     .onTapGesture {
@@ -119,15 +113,25 @@ struct ImageEditor: View {
                             }
                             .onMove(perform: move)
                         }
+                        
+                        Button(action: {
+                            // Action to perform when the button is tapped
+                            updateItemsWithChanges(screen: selectedScreen)
+                        }) {
+                            Text("Submit Changes")
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                         .onChange(of: croppedImage) { newImage in
-                            //call uploadImage which will return new link.
-                            manager.uploadImage(newImage: newImage!) { imagePath in
-                                //updates the imageLink Dictionary
-                                manager.imageLink[newImage!] = imagePath
-                                //Save new image to manager.screens
-                                selectedScreen.images[selectedItemIdx].image = croppedImage
-                                //all that is left is update the firbase data base
-                                updateItemsWithChanges(screen: selectedScreen)
+                            if let newImage = newImage {
+                                // Call uploadImage which will return a new link.
+                                manager.uploadImage(newImage: newImage) { imagePath in
+                                    // Update the imageLink Dictionary.
+                                    manager.imageLink[selectedScreen.images[selectedImageIdx].image!] = imagePath
+                                    // Update the image at the selected index.
+                                    selectedScreen.images[selectedImageIdx].image = newImage
+                                    selectedScreen.images[selectedImageIdx].link = imagePath
+                                    self.croppedImage = nil
+                                }
                             }
                         }
                     }.onAppear {
@@ -181,7 +185,6 @@ struct ImageEditor: View {
                             selectedScreen.items[selectedItemIdx].title = newItemName
                             selectedScreen.items[selectedItemIdx].price = newItemPrice
                             selectedScreen.items[selectedItemIdx].description = newItemDescription
-                            updateItemsWithChanges(screen: selectedScreen)
                         }
                         createNewItem = false
                     }, label: {
@@ -230,7 +233,6 @@ struct ImageEditor: View {
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items.append(screen.items[(screen.items.count - 1)])
                 updateItemsWithChanges(screen: selectedScreen)
-                //manager.createFirebaseTemplate(index: idx)
                 print("\tAdd Succeded!!")
                 return
             }
