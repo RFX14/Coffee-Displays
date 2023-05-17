@@ -146,7 +146,7 @@ class ScreenManager: ObservableObject {
         }
     }
     
-
+    //it seem when an image is updated firebase ended up deleting the other image that was not updated. so like if there is image_1 and image_2, and I updated the photo of image_2 then image_1 would be deleted... either its not saving to Screens or its not adding to firebasetemplate...
     func createFirebaseTemplate(index: Int) {
         var firebaseTemplate: [String: [String: [String: Any]]] = [:]
         for currentScreen in screens {
@@ -206,6 +206,7 @@ class ScreenManager: ObservableObject {
             }
             
             group.notify(queue: .main) {
+                //firebaseTemplate is right... how updateFirebase is not reading it right....
                 self.updateFirebase(firebaseTemplate: firebaseTemplate)
             }
         }
@@ -290,7 +291,8 @@ class ScreenManager: ObservableObject {
     }
     */
     
-    func updateFirebase(firebaseTemplate: [String: [String: Any]] ) {
+    func updateFirebase(firebaseTemplate: [String: [String: [String: Any]]] ) {
+        
         db.collection("users").document(user).setData([
             "screens": firebaseTemplate
         ]) { err in
