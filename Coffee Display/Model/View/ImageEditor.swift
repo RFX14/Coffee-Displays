@@ -34,6 +34,7 @@ struct ImageEditor: View {
     @State private var showingImagePicker = false
     @State private var croppedImage: UIImage? = nil
     @State private var oldImages = [1]
+    @State private var didUpdateImages = false
     
     /*
     var simpleDrag: some Gesture {
@@ -57,7 +58,7 @@ struct ImageEditor: View {
             }
     }
     */
-    //some how using a dictionary to save every unique image with the index...However before we had the issue of the screen not working...can't we just update Screens with the new image and thats it? so like save it first and then loop normally while displaying information. But what about cropped image? I mean we can still use it. Just first save new cropped image to screen, then upload and then reset cropped image to nil....but will that trigger the action again? lets try...
+    //Still need to work on changing the positions for items and images. Its really close, however its not saving to firebase properly. Ok so new Issue since we call the same function for creating a template which will be used to update firebase images it ends up creating new images constantly b/c dont have any way to tell if only text or images have been messed with. Need a Bool to determine  when an image has been modified, if it has not been modified then we simply create template with the new text....(that should reduce the amount of images be uploaded to firebase)
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -111,7 +112,7 @@ struct ImageEditor: View {
                                     }
                                 }
                             }
-                            .onMove(perform: move)
+                            .onMove(perform: moveImage)
                         }
                         
                         Button(action: {
@@ -130,6 +131,7 @@ struct ImageEditor: View {
                                     // Update the image at the selected index.
                                     selectedScreen.images[selectedImageIdx].image = newImage
                                     selectedScreen.images[selectedImageIdx].link = imagePath
+                                    didUpdateImages = true
                                     self.croppedImage = nil
                                 }
                             }
@@ -214,6 +216,7 @@ struct ImageEditor: View {
         }
     }
     
+    //Movement for Items
     func move(from source: IndexSet, to destination: Int) {
         selectedScreen.items.move(fromOffsets: source, toOffset: destination)
         updatePositionIndexes()
@@ -225,6 +228,20 @@ struct ImageEditor: View {
             selectedScreen.items[idx].position = idx
         }
         selectedScreen.items.sort(by: {$0.position < $1.position})
+    }
+    
+    //Movement for Images
+    func moveImage(from source: IndexSet, to destination: Int) {
+        selectedScreen.images.move(fromOffsets: source, toOffset: destination)
+        updateImagePositionIndexes()
+        updateFullArrayWithChanges(screen: selectedScreen)
+    }
+    
+    func updateImagePositionIndexes() {
+        for idx in 0..<selectedScreen.images.count {
+            selectedScreen.images[idx].position = idx
+        }
+        selectedScreen.images.sort(by: {$0.position ?? 0 < $1.position ?? 0})
     }
     
     func addItemsToScreen(screen: Screen) {
@@ -239,35 +256,49 @@ struct ImageEditor: View {
         }
         print("\tAdd Failed")
     }
-    //is called with view disappears
+    
     func updateFullArrayWithChanges(screen: Screen) {
         for idx in manager.screens.indices {
             if manager.screens[idx].id == screen.id {
                 manager.screens[idx].items = screen.items
                 manager.screens[idx].images = screen.images
-                print("\tUpdate Succeded!!")
+                //print("\tUpdate Succeded!!")
             }
         }
-        
+        //updateItemsWithChanges(screen: screen)
+        /*
         for idx in manager.screens.indices {
             manager.createFirebaseTemplate(index: idx)
         }
-        
-        print("\tUpdate Failed")
+         */
     }
     
     func updateItemsWithChanges(screen: Screen) {
-        for idx in manager.screens.indices {
-            if manager.screens[idx].id == screen.id {
-                manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
-                manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
-                //update firebase with changes
-                manager.createFirebaseTemplate(index: idx)
-                print("\tUpdate Succeded!!")
-                return
+        if didUpdateImages == true {
+            for idx in manager.screens.indices {
+                if manager.screens[idx].id == screen.id {
+                    manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
+                    manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
+                    //update firebase with changes
+                    manager.createFirebaseTemplate(index: idx)
+                    print("\tUpdate Succeded!!")
+                    return
+                }
+            }
+        } else {
+            for idx in manager.screens.indices {
+                if manager.screens[idx].id == screen.id {
+                    manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
+                    manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
+                    //update firebase with changes
+                    manager.createFirebaseTemplateTextOnly(index: idx)
+                    print("\tText Updated!!")
+                    return
+                }
             }
         }
-
+        
+        didUpdateImages = false
         print("\tUpdate Failed")
     }
 }

@@ -212,6 +212,39 @@ class ScreenManager: ObservableObject {
         }
     }
     
+    //should only activate if images were never changed!
+    func createFirebaseTemplateTextOnly(index: Int) {
+        var firebaseTemplate: [String: [String: [String: Any]]] = [:]
+        for currentScreen in screens {
+            if firebaseTemplate[currentScreen.name] == nil {
+                firebaseTemplate[currentScreen.name] = [:]
+            }
+            
+            if firebaseTemplate[currentScreen.name]?["items"] == nil {
+                firebaseTemplate[currentScreen.name]?["items"] = [:]
+            }
+            
+            if firebaseTemplate[currentScreen.name]?["images"] == nil {
+                firebaseTemplate[currentScreen.name]?["images"] = [:]
+            }
+            
+            for curItem in currentScreen.items {
+                firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = ["description": curItem.description, "position": curItem.position, "price": curItem.price]
+            }
+            
+            for curImage in currentScreen.images {
+                if imageLink.keys.contains(curImage.image!) {
+                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!
+    ], "position": curImage.position]
+                } else {
+                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": curImage.link, "position": curImage.position]
+                }
+            }
+        }
+        print(firebaseTemplate)
+        updateFirebase(firebaseTemplate: firebaseTemplate)
+    }
+    
     func uploadImage(newImage: UIImage, completion: @escaping ((String) -> ())) {
         guard let imageData = newImage.jpegData(compressionQuality: 0.8) else {
             return
