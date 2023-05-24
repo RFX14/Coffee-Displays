@@ -58,7 +58,7 @@ struct ImageEditor: View {
             }
     }
     */
-    //Still need to work on changing the positions for items and images. Its really close, however its not saving to firebase properly. Ok so new Issue since we call the same function for creating a template which will be used to update firebase images it ends up creating new images constantly b/c dont have any way to tell if only text or images have been messed with. Need a Bool to determine  when an image has been modified, if it has not been modified then we simply create template with the new text....(that should reduce the amount of images be uploaded to firebase)
+    //Need to fix the multiple uploads of images to firebase...will check
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -116,24 +116,45 @@ struct ImageEditor: View {
                         }
                         
                         Button(action: {
-                            // Action to perform when the button is tapped
-                            updateItemsWithChanges(screen: selectedScreen)
+                            let group = DispatchGroup()
+
+                            // Enter the group before the loop
+                            group.enter()
+                            
+                            for (idx, curImage) in selectedScreen.images.enumerated() {
+                                // Call uploadImage which will return a new link.
+                                manager.uploadImage(newImage: curImage.image!) { imagePath in
+                                    if imagePath == "No Change" {
+                                        //loop should move on to the next image
+                                        return
+                                    } else {
+                                        //we update the imageLink with the up to date link.
+                                        // Update the imageLink Dictionary.
+                                        manager.imageLink[selectedScreen.images[idx].image!] = imagePath
+                                        // newImage is already in selectedScreen we now just updating it with the URL
+                                        selectedScreen.images[idx].link = imagePath
+                                        didUpdateImages = true
+                                    }
+                                }
+                            }
+                            group.leave()
+                            group.notify(queue: .main) {
+                                // Action to perform when the button is tapped
+                                updateItemsWithChanges(screen: selectedScreen)
+                                manager.fetchUrlsForUser {
+                                    print("Dict. updated")
+                                }
+                            }
+                            
                         }) {
                             Text("Submit Changes")
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         .onChange(of: croppedImage) { newImage in
                             if let newImage = newImage {
-                                // Call uploadImage which will return a new link.
-                                manager.uploadImage(newImage: newImage) { imagePath in
-                                    // Update the imageLink Dictionary.
-                                    manager.imageLink[selectedScreen.images[selectedImageIdx].image!] = imagePath
-                                    // Update the image at the selected index.
-                                    selectedScreen.images[selectedImageIdx].image = newImage
-                                    selectedScreen.images[selectedImageIdx].link = imagePath
-                                    didUpdateImages = true
-                                    self.croppedImage = nil
-                                }
+                                //B/c I did this will need to loop through current screen when SUBMIT button is pressed and update it with the current link...I got to be care full tho b/c this might create duplciates.
+                                selectedScreen.images[selectedImageIdx].image = newImage
+                                self.croppedImage = nil
                             }
                         }
                     }.onAppear {

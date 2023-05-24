@@ -14,6 +14,7 @@ class ScreenManager: ObservableObject {
     @Published var screen: String = "Austin"
     @Published var imageLink: [UIImage: String] = [:]
     
+    var curImages: [UIImage: String] = [:]
     private var links: [String] = []
     private var linkWithImage: [String: UIImage] = [:]
     private var changes: [String: Any] = [:]
@@ -30,11 +31,109 @@ class ScreenManager: ObservableObject {
     }
      */
     
+    //Will fetch all the urls images for the current user. This will then call another function that will fetch the images and save curImages. This will be used to determine whether or not an image exist in firebase or not.
+    func fetchUrlsForUser(completion: @escaping () -> Void) {
+        let storageRef = Storage.storage().reference()
+        let imagesRef = storageRef.child("images")
+
+        // List all items (images) in the folder
+        imagesRef.listAll { result, error in
+            if let error = error {
+                // Handle error
+                print("Error listing images: \(error.localizedDescription)")
+                completion()
+                return
+            }
+            
+            // Retrieve the list of items (images)
+            let items = result?.items
+            
+            // Create an array to store the URLs of the images
+            var imageUrls: [URL] = []
+            
+            // Create a dispatch group
+            let group = DispatchGroup()
+            
+            // Iterate over the items
+            for item in items ?? [] {
+                // Enter the dispatch group
+                group.enter()
+                
+                // Get the download URL for each image
+                item.downloadURL { (url, error) in
+                    if let error = error {
+                        // Handle error
+                        print("Error getting download URL: \(error.localizedDescription)")
+                    } else if let url = url {
+                        // Store the download URL in the array
+                        imageUrls.append(url)
+                    }
+                    
+                    // Leave the dispatch group
+                    group.leave()
+                }
+            }
+            
+            // Notify the group when all tasks are complete
+            group.notify(queue: .main) {
+                // Use the imageUrls array as needed
+                // For example, you can pass it to a function for further processing
+                self.processImageUrls(imageUrls) {
+                    // Call the completion closure when all image downloads are finished
+                    completion()
+                }
+            }
+        }
+    }
+
+    func processImageUrls(_ imageUrls: [URL], completion: @escaping () -> Void) {
+        // Perform any desired actions with the image URLs
+        // For example, you can display the images or download them
+        
+        // Create a dispatch group
+        let group = DispatchGroup()
+        
+        // Example: Download the images
+        for imageUrl in imageUrls {
+            // Enter the dispatch group
+            group.enter()
+            
+            downloadImage(from: imageUrl) {
+                // Leave the dispatch group when image download is finished
+                group.leave()
+            }
+        }
+        
+        // Notify the group when all image downloads are finished
+        group.notify(queue: .main) {
+            // Call the completion closure
+            completion()
+        }
+    }
+
+    func downloadImage(from url: URL, completion: @escaping () -> Void) {
+        URLSession.shared.dataTask(with: url) { (data, response, error) in
+            if let error = error {
+                // Handle error
+                print("Error downloading image: \(error.localizedDescription)")
+                completion()
+                return
+            }
+            
+            // Process the downloaded image data as needed
+            if let data = data, let image = UIImage(data: data) {
+                self.curImages[image] = "\(url)"
+            }
+            
+            completion()
+        }.resume()
+    }
+
+    
     // Note: completion handler was used to make sure everthing was completed before the name sorting would be completed in the main view.
     //Current Issue: when ever I add another image to a screen it messes up the fetching and creates duplicate screens.
     func fetchAvailableScreens(completion: @escaping(() -> Void)) {
         self.db.collection("users").document(self.user).getDocument { docSnapshot, err in
-            print("grab data")
             guard let doc = docSnapshot else {
                 print("Error fetching document: \(err!)")
                 return
@@ -98,6 +197,7 @@ class ScreenManager: ObservableObject {
                 } else if let data = data {
                     if let image = UIImage(data: data) {
                         self.linkWithImage[link] = image
+                        self.curImages[image] = link
                     } else {
                         print("Invalid image data")
                     }
@@ -108,7 +208,7 @@ class ScreenManager: ObservableObject {
             }
         }
         group.notify(queue: DispatchQueue.main) {
-            print(self.linkWithImage)
+            //print(self.linkWithImage)
             completion() // call the completion handler when all requests have completed
         }
     }
@@ -263,19 +363,12 @@ class ScreenManager: ObservableObject {
             }
             
             let files = result?.items
-            if files!.count > 0 {
-                // File already exists, return its download URL
-                files![0].downloadURL { url, error in
-                    if let error = error {
-                        // Handle error
-                        print("Error getting download URL: \(error.localizedDescription)")
-                        return
-                    }
-                    
-                    if let url = url {
-                        completion(url.absoluteString)
-                    }
-                }
+            
+            // Check if specific image already exists(STILL NEEDS WORK) Must compare images to each other make sure to check really should check if in
+            //The idea is if we find out that the image already exist in firebase storage than we send back a string that notifies to not update the link. However we still need to see if firebase will allow us to compare or else I will have to download each image which is not Ideal and will force me to find another way to compare images.
+            //debating if curimages should be a dictionary....nah probably not
+            if self.curImages.contains(where: { $0.key == newImage })  {
+                completion(self.curImages[newImage] ?? "N/A")
             } else {
                 // File does not exist, upload the new file
                 let uploadTask = fileRef.putData(imageData, metadata: nil) { metadata, error in
@@ -288,6 +381,8 @@ class ScreenManager: ObservableObject {
                             }
                             
                             if let url = url {
+                                //Gotta constantly update set or else we end up with duplicates
+                                self.curImages[newImage] = "\(url)"
                                 completion(url.absoluteString)
                             }
                         }
@@ -297,33 +392,7 @@ class ScreenManager: ObservableObject {
         }
     }
 
-    
-    /*
-    //Whats gonna happen is we upload the image to firebase and the retrieve the image link and then return that as string. which will then be saved to firebase. Note need to make sure if image already exist in storage, if so then we just return the link that is found globally.
-    func uploadImage(newImage: UIImage, completion: @escaping((String) -> ())) {
-        guard newImage != nil else {
-            return
-        }
-        
-        let storageRef = Storage.storage().reference()
-        
-        let imageData = newImage.jpegData(compressionQuality: 0.8)
-        
-        guard imageData != nil else {
-            return
-        }
-        let path = "images/\(UUID().uuidString).jpg"
-        let fileRef = storageRef.child(path)
-        
-        let uploadTask = fileRef.putData(imageData!, metadata: nil) { metadata, error in
-            
-            if error == nil && metadata != nil {
-                completion(path)
-            }
-        }
-    }
-    */
-    
+
     func updateFirebase(firebaseTemplate: [String: [String: [String: Any]]] ) {
         
         db.collection("users").document(user).setData([
