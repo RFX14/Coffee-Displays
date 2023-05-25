@@ -120,29 +120,26 @@ struct ImageEditor: View {
 
                             // Enter the group before the loop
                             group.enter()
-                            
+                            print("This is curImage After LOOP: \(manager.curImages)")
+                            print(manager.curImages.count)
                             for (idx, curImage) in selectedScreen.images.enumerated() {
-                                // Call uploadImage which will return a new link.
+                                // Call uploadImage which will return a new link.// Seems NewImage is not returning the old url and instead is reuploading an image...
                                 manager.uploadImage(newImage: curImage.image!) { imagePath in
-                                    if imagePath == "No Change" {
-                                        //loop should move on to the next image
-                                        return
-                                    } else {
-                                        //we update the imageLink with the up to date link.
-                                        // Update the imageLink Dictionary.
-                                        manager.imageLink[selectedScreen.images[idx].image!] = imagePath
-                                        // newImage is already in selectedScreen we now just updating it with the URL
-                                        selectedScreen.images[idx].link = imagePath
-                                        didUpdateImages = true
-                                    }
+                                    // Update the imageLink Dictionary.
+                                    manager.imageLink[selectedScreen.images[idx].image!] = imagePath
+                                    // newImage is already in selectedScreen we now just updating it with the URL
+                                    selectedScreen.images[idx].link = imagePath
+                                    didUpdateImages = true
                                 }
                             }
                             group.leave()
                             group.notify(queue: .main) {
-                                // Action to perform when the button is tapped
+                                // Action to perform when the button is tapped/later fix the updating firebase again...may 25
                                 updateItemsWithChanges(screen: selectedScreen)
+                                //there is a possibility that updateItems is not finishing so when we grab the newurls then that dictionary is not updated. which ends up uploading duplicates of the same thing. remember curImage in manager holds any images that exist in storage.
+                                //curImages is wrong!!! Double check
                                 manager.fetchUrlsForUser {
-                                    print("Dict. updated")
+                                    //I dont know why BUT fetchUrls ends up adding more than one thing this time. and I only changed one thing.
                                 }
                             }
                             
@@ -158,7 +155,6 @@ struct ImageEditor: View {
                             }
                         }
                     }.onAppear {
-                        //print("selectScreen, \(selectedScreen)")
                         print("View Appearing!")
                         //print("\t\(selectedScreen.items.first?.title)")
                         oldItems = selectedScreen.items
@@ -318,7 +314,6 @@ struct ImageEditor: View {
                 }
             }
         }
-        
         didUpdateImages = false
         print("\tUpdate Failed")
     }

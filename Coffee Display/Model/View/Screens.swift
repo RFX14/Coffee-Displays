@@ -27,7 +27,6 @@ struct Screens: View {
         .onAppear {
             manager.fetchUrlsForUser {
                 manager.fetchAvailableScreens {
-                    print(manager.curImages)
                     manager.fetchImages {
                         manager.addNewImages {
                             manager.screens.sort(by: {$0.name < $1.name})

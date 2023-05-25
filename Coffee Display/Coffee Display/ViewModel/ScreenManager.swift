@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseStorage
+//current Issue: so this is just a guess. But since I grab the images twice from different functions that way they are "grabbed" each image has a different number/encoding which inturn makes curImages not match the other images. gotta look into it.
 @MainActor
 class ScreenManager: ObservableObject {
     @Published var screens: [Screen] = []
@@ -197,7 +198,6 @@ class ScreenManager: ObservableObject {
                 } else if let data = data {
                     if let image = UIImage(data: data) {
                         self.linkWithImage[link] = image
-                        self.curImages[image] = link
                     } else {
                         print("Invalid image data")
                     }
@@ -341,7 +341,7 @@ class ScreenManager: ObservableObject {
                 }
             }
         }
-        print(firebaseTemplate)
+        //print(firebaseTemplate)
         updateFirebase(firebaseTemplate: firebaseTemplate)
     }
     
@@ -363,12 +363,13 @@ class ScreenManager: ObservableObject {
             }
             
             let files = result?.items
-            
+            print("IMAGE: \(newImage)")
+            print(self.curImages)
             // Check if specific image already exists(STILL NEEDS WORK) Must compare images to each other make sure to check really should check if in
             //The idea is if we find out that the image already exist in firebase storage than we send back a string that notifies to not update the link. However we still need to see if firebase will allow us to compare or else I will have to download each image which is not Ideal and will force me to find another way to compare images.
-            //debating if curimages should be a dictionary....nah probably not
             if self.curImages.contains(where: { $0.key == newImage })  {
-                completion(self.curImages[newImage] ?? "N/A")
+                print("active")
+                completion(self.curImages[newImage]!)
             } else {
                 // File does not exist, upload the new file
                 let uploadTask = fileRef.putData(imageData, metadata: nil) { metadata, error in
@@ -379,10 +380,8 @@ class ScreenManager: ObservableObject {
                                 print("Error getting download URL: \(error.localizedDescription)")
                                 return
                             }
-                            
+                            //The adding to curImages needs more work it keep adding alot of things
                             if let url = url {
-                                //Gotta constantly update set or else we end up with duplicates
-                                self.curImages[newImage] = "\(url)"
                                 completion(url.absoluteString)
                             }
                         }
