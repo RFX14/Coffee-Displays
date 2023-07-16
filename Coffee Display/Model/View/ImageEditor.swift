@@ -34,7 +34,6 @@ struct ImageEditor: View {
     @State private var showingImagePicker = false
     @State private var croppedImage: UIImage? = nil
     @State private var oldImages = [1]
-    @State private var didUpdateImages = false
     
     /*
     var simpleDrag: some Gesture {
@@ -126,10 +125,10 @@ struct ImageEditor: View {
                                 // Call uploadImage which will return a new link.// Seems NewImage is not returning the old url and instead is reuploading an image...
                                 manager.uploadImage(newImage: curImage.image!) { imagePath in
                                     // Update the imageLink Dictionary.
+                                    print("current image Path \(imagePath)")
                                     manager.imageLink[selectedScreen.images[idx].image!] = imagePath
                                     // newImage is already in selectedScreen we now just updating it with the URL
-                                    selectedScreen.images[idx].link = imagePath
-                                    didUpdateImages = true
+                                    selectedScreen.images[idx].link = imagePath //Should be updating link.
                                 }
                             }
                             group.leave()
@@ -137,10 +136,6 @@ struct ImageEditor: View {
                                 // Action to perform when the button is tapped/later fix the updating firebase again...may 25
                                 updateItemsWithChanges(screen: selectedScreen)
                                 //there is a possibility that updateItems is not finishing so when we grab the newurls then that dictionary is not updated. which ends up uploading duplicates of the same thing. remember curImage in manager holds any images that exist in storage.
-                                //curImages is wrong!!! Double check
-                                manager.fetchUrlsForUser {
-                                    //I dont know why BUT fetchUrls ends up adding more than one thing this time. and I only changed one thing.
-                                }
                             }
                             
                         }) {
@@ -290,31 +285,17 @@ struct ImageEditor: View {
          */
     }
     
+    // Debating if we need "didUpdateImages"
     func updateItemsWithChanges(screen: Screen) {
-        if didUpdateImages == true {
-            for idx in manager.screens.indices {
-                if manager.screens[idx].id == screen.id {
-                    manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
-                    manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
-                    //update firebase with changes
-                    manager.createFirebaseTemplate(index: idx)
-                    print("\tUpdate Succeded!!")
-                    return
-                }
-            }
-        } else {
-            for idx in manager.screens.indices {
-                if manager.screens[idx].id == screen.id {
-                    manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
-                    manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
-                    //update firebase with changes
-                    manager.createFirebaseTemplateTextOnly(index: idx)
-                    print("\tText Updated!!")
-                    return
-                }
+        for idx in manager.screens.indices {
+            if manager.screens[idx].id == screen.id {
+                manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
+                manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
             }
         }
-        didUpdateImages = false
-        print("\tUpdate Failed")
+        //update firebase with changes
+        manager.createFirebaseTemplate()
+        print("\tUpdate Succeded!!")
+        return
     }
 }

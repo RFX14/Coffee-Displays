@@ -8,7 +8,7 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseStorage
-//current Issue: so this is just a guess. But since I grab the images twice from different functions that way they are "grabbed" each image has a different number/encoding which inturn makes curImages not match the other images. gotta look into it.
+// Ok we going to limit the amount of images per user to ten. This will help us not have so many image/duplicates. Probably we shall allow each user to delete any photos on the cloud. Does that mean we want them to also choose photos from the cloud? more than likely yes!(still debating on doing that right now...)
 @MainActor
 class ScreenManager: ObservableObject {
     @Published var screens: [Screen] = []
@@ -31,75 +31,18 @@ class ScreenManager: ObservableObject {
         ])
     }
      */
-    
-    //Will fetch all the urls images for the current user. This will then call another function that will fetch the images and save curImages. This will be used to determine whether or not an image exist in firebase or not.
-    func fetchUrlsForUser(completion: @escaping () -> Void) {
-        let storageRef = Storage.storage().reference()
-        let imagesRef = storageRef.child("images")
 
-        // List all items (images) in the folder
-        imagesRef.listAll { result, error in
-            if let error = error {
-                // Handle error
-                print("Error listing images: \(error.localizedDescription)")
-                completion()
-                return
-            }
-            
-            // Retrieve the list of items (images)
-            let items = result?.items
-            
-            // Create an array to store the URLs of the images
-            var imageUrls: [URL] = []
-            
-            // Create a dispatch group
-            let group = DispatchGroup()
-            
-            // Iterate over the items
-            for item in items ?? [] {
-                // Enter the dispatch group
-                group.enter()
-                
-                // Get the download URL for each image
-                item.downloadURL { (url, error) in
-                    if let error = error {
-                        // Handle error
-                        print("Error getting download URL: \(error.localizedDescription)")
-                    } else if let url = url {
-                        // Store the download URL in the array
-                        imageUrls.append(url)
-                    }
-                    
-                    // Leave the dispatch group
-                    group.leave()
-                }
-            }
-            
-            // Notify the group when all tasks are complete
-            group.notify(queue: .main) {
-                // Use the imageUrls array as needed
-                // For example, you can pass it to a function for further processing
-                self.processImageUrls(imageUrls) {
-                    // Call the completion closure when all image downloads are finished
-                    completion()
-                }
-            }
-        }
-    }
-
-    func processImageUrls(_ imageUrls: [URL], completion: @escaping () -> Void) {
-        // Perform any desired actions with the image URLs
-        // For example, you can display the images or download them
-        
+    func processImageUrls(completion: @escaping () -> Void) {
         // Create a dispatch group
         let group = DispatchGroup()
         
         // Example: Download the images
-        for imageUrl in imageUrls {
+        for imageUrl in links {
+            let url = URL(string: imageUrl)
             // Enter the dispatch group
             group.enter()
             
-            downloadImage(from: imageUrl) {
+            downloadImage(from: url!) {
                 // Leave the dispatch group when image download is finished
                 group.leave()
             }
@@ -107,11 +50,15 @@ class ScreenManager: ObservableObject {
         
         // Notify the group when all image downloads are finished
         group.notify(queue: .main) {
+            //Don't know why but I'm only getting testImage.png...
+            //print(self.curImages)
+            //print(self.linkWithImage)
             // Call the completion closure
             completion()
         }
     }
 
+    
     func downloadImage(from url: URL, completion: @escaping () -> Void) {
         URLSession.shared.dataTask(with: url) { (data, response, error) in
             if let error = error {
@@ -123,10 +70,18 @@ class ScreenManager: ObservableObject {
             
             // Process the downloaded image data as needed
             if let data = data, let image = UIImage(data: data) {
-                self.curImages[image] = "\(url)"
+                DispatchQueue.main.async {
+                    
+                    self.curImages[image] = "\(url)"
+                    self.linkWithImage["\(url)"] = image
+                    //print(self.curImages)
+                    completion()
+                }
+            } else {
+                DispatchQueue.main.async {
+                    completion()
+                }
             }
-            
-            completion()
         }.resume()
     }
 
@@ -166,7 +121,7 @@ class ScreenManager: ObservableObject {
                         }
                     }
                 }
-                //Images
+                //Images (this will be modified and merged with something)
                 for (title, details) in item {
                     if title == "images" {
                         let image_details = details as? [String: [String: Any]] ?? [:]
@@ -175,44 +130,18 @@ class ScreenManager: ObservableObject {
                             let image_link = image_values["link"] as? String ?? ""
                             let position = image_values["position"] as? Int ?? 0
                             images.append(.init(title: image_name, link: image_link, position: position, image: UIImage(named: "imageTest.png")!))
+                            // Will be used to grab the images and refill screens.image with the proper images. will call download images which will populate a dictionary...(linkWithImage) we will use addImages to merge everything.
+                            self.linkWithImage[image_link] = UIImage(named: "imageTest.png")!
                             self.links.append(image_link)
                         }
                     }
                 }
-                
                 self.screens.append(Screen(name: curScreen, items: items, images: images))
             }
             completion()
         }
     }
-    func fetchImages(completion: @escaping (() -> Void)) {
-        print("fetchImages")
-        let storageRef = Storage.storage().reference()
-        let group = DispatchGroup() // create a dispatch group
-        for link in self.links {
-            group.enter() // enter the group for each request
-            let httpsReference = storageRef.storage.reference(forURL: link)
-            httpsReference.getData(maxSize: 5 * 1024 * 1024) { data, error in
-                if let error = error {
-                    print(error.localizedDescription)
-                } else if let data = data {
-                    if let image = UIImage(data: data) {
-                        self.linkWithImage[link] = image
-                    } else {
-                        print("Invalid image data")
-                    }
-                } else {
-                    print("No data received")
-                }
-                group.leave() // leave the group when the request completes
-            }
-        }
-        group.notify(queue: DispatchQueue.main) {
-            //print(self.linkWithImage)
-            completion() // call the completion handler when all requests have completed
-        }
-    }
-    
+    //Since simply updates Screen with the images that were found in storage.
     func addNewImages(completion: @escaping (() -> Void)) {
         print("add new images")
         let group = DispatchGroup()
@@ -226,11 +155,15 @@ class ScreenManager: ObservableObject {
                             self.screens[i].images[j].image = newImage
                             group.leave()
                         }
+                    } else {
+                        print(curImage.link)
+                        print("image not found")
                     }
                 }
             }
         }
         group.notify(queue: DispatchQueue.main) {
+            print(self.linkWithImage)
             completion()
         }
     }
@@ -241,13 +174,13 @@ class ScreenManager: ObservableObject {
                 //add the newScreen in manager Screens with the same index
                 screens[idx] = newScreen
                 //print(screens)
-                createFirebaseTemplate(index: idx)
+                createFirebaseTemplate()
             }
         }
     }
     
     //it seem when an image is updated firebase ended up deleting the other image that was not updated. so like if there is image_1 and image_2, and I updated the photo of image_2 then image_1 would be deleted... either its not saving to Screens or its not adding to firebasetemplate...
-    func createFirebaseTemplate(index: Int) {
+    func createFirebaseTemplate() {
         var firebaseTemplate: [String: [String: [String: Any]]] = [:]
         for currentScreen in screens {
             if firebaseTemplate[currentScreen.name] == nil {
@@ -274,7 +207,7 @@ class ScreenManager: ObservableObject {
             
             for curImage in currentScreen.images {
                 group.enter()
-                
+                //chatgpt made this fancy...
                 if let image = curImage.image,
                    let imageKey = imageLink.keys.first(where: { $0 == image }),
                    let imageUrl = imageLink[imageKey] {
@@ -284,6 +217,8 @@ class ScreenManager: ObservableObject {
                     ]
                     group.leave()
                 } else {
+                    //basically if the image does not exist in imageLink dictionary than we add it to firebase... is that what we want though since we will update...will check this later...
+                    //this might change b/c I will update imageLink with all the images and url that are in firebase... jun 1, 2023
                     uploadImage(newImage: curImage.image ?? UIImage(named: "imageTest")!) { [weak self] newUrl in
                         guard let self = self else {
                             group.leave()
@@ -306,45 +241,14 @@ class ScreenManager: ObservableObject {
             }
             
             group.notify(queue: .main) {
-                //firebaseTemplate is right... how updateFirebase is not reading it right....
+                print("firebase Template: \(firebaseTemplate)")
+                //erasing the images that were not updated.
                 self.updateFirebase(firebaseTemplate: firebaseTemplate)
             }
         }
     }
     
-    //should only activate if images were never changed!
-    func createFirebaseTemplateTextOnly(index: Int) {
-        var firebaseTemplate: [String: [String: [String: Any]]] = [:]
-        for currentScreen in screens {
-            if firebaseTemplate[currentScreen.name] == nil {
-                firebaseTemplate[currentScreen.name] = [:]
-            }
-            
-            if firebaseTemplate[currentScreen.name]?["items"] == nil {
-                firebaseTemplate[currentScreen.name]?["items"] = [:]
-            }
-            
-            if firebaseTemplate[currentScreen.name]?["images"] == nil {
-                firebaseTemplate[currentScreen.name]?["images"] = [:]
-            }
-            
-            for curItem in currentScreen.items {
-                firebaseTemplate[currentScreen.name]?["items"]?[curItem.title] = ["description": curItem.description, "position": curItem.position, "price": curItem.price]
-            }
-            
-            for curImage in currentScreen.images {
-                if imageLink.keys.contains(curImage.image!) {
-                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": imageLink[(curImage.image ?? UIImage(named: "imageTest"))!
-    ], "position": curImage.position]
-                } else {
-                    firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = ["link": curImage.link, "position": curImage.position]
-                }
-            }
-        }
-        //print(firebaseTemplate)
-        updateFirebase(firebaseTemplate: firebaseTemplate)
-    }
-    
+    //sends NEW pictures twice if we changed one photo. Gotta see why...I'm confused. ill figure it out tho
     func uploadImage(newImage: UIImage, completion: @escaping ((String) -> ())) {
         guard let imageData = newImage.jpegData(compressionQuality: 0.8) else {
             return
@@ -362,13 +266,10 @@ class ScreenManager: ObservableObject {
                 return
             }
             
-            let files = result?.items
-            print("IMAGE: \(newImage)")
-            print(self.curImages)
-            // Check if specific image already exists(STILL NEEDS WORK) Must compare images to each other make sure to check really should check if in
-            //The idea is if we find out that the image already exist in firebase storage than we send back a string that notifies to not update the link. However we still need to see if firebase will allow us to compare or else I will have to download each image which is not Ideal and will force me to find another way to compare images.
+            
+            print("New IMAGE: \(newImage)")
             if self.curImages.contains(where: { $0.key == newImage })  {
-                print("active")
+                print("Found Image")
                 completion(self.curImages[newImage]!)
             } else {
                 // File does not exist, upload the new file
@@ -382,6 +283,9 @@ class ScreenManager: ObservableObject {
                             }
                             //The adding to curImages needs more work it keep adding alot of things
                             if let url = url {
+                                print("added New Image: \(newImage)")
+                                //Save new image to curImages
+                                self.curImages[newImage] = "\(url)"
                                 completion(url.absoluteString)
                             }
                         }
@@ -392,7 +296,7 @@ class ScreenManager: ObservableObject {
     }
 
 
-    func updateFirebase(firebaseTemplate: [String: [String: [String: Any]]] ) {
+    func updateFirebase(firebaseTemplate: [String: [String: Any]] ) {
         
         db.collection("users").document(user).setData([
             "screens": firebaseTemplate
