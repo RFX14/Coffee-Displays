@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseStorage
+// current issue: when you change more than one picture and send it to firebase, only one of the image_# is changed. So the template is wrong before its sent to firebase...
 // Ok we going to limit the amount of images per user to ten. This will help us not have so many image/duplicates. Probably we shall allow each user to delete any photos on the cloud. Does that mean we want them to also choose photos from the cloud? more than likely yes!(still debating on doing that right now...)
 @MainActor
 class ScreenManager: ObservableObject {
@@ -248,7 +249,7 @@ class ScreenManager: ObservableObject {
         }
     }
     
-    //sends NEW pictures twice if we changed one photo. Gotta see why...I'm confused. ill figure it out tho
+    //sends NEW pictures twice if we changed one photo. 
     func uploadImage(newImage: UIImage, completion: @escaping ((String) -> ())) {
         guard let imageData = newImage.jpegData(compressionQuality: 0.8) else {
             return
@@ -268,26 +269,21 @@ class ScreenManager: ObservableObject {
             
             
             print("New IMAGE: \(newImage)")
-            if self.curImages.contains(where: { $0.key == newImage })  {
-                print("Found Image")
-                completion(self.curImages[newImage]!)
-            } else {
-                // File does not exist, upload the new file
-                let uploadTask = fileRef.putData(imageData, metadata: nil) { metadata, error in
-                    if error == nil && metadata != nil {
-                        fileRef.downloadURL { url, error in
-                            if let error = error {
-                                // Handle error
-                                print("Error getting download URL: \(error.localizedDescription)")
-                                return
-                            }
-                            //The adding to curImages needs more work it keep adding alot of things
-                            if let url = url {
-                                print("added New Image: \(newImage)")
-                                //Save new image to curImages
-                                self.curImages[newImage] = "\(url)"
-                                completion(url.absoluteString)
-                            }
+            // will try to upload and and return the url
+            fileRef.putData(imageData, metadata: nil) { metadata, error in
+                if error == nil && metadata != nil {
+                    fileRef.downloadURL { url, error in
+                        if let error = error {
+                            // Handle error
+                            print("Error getting download URL: \(error.localizedDescription)")
+                            return
+                        }
+                        //The adding to curImages needs more work it keep adding alot of things
+                        if let url = url {
+                            print("added New Image: \(newImage)")
+                            //Save new image to curImages
+                            self.curImages[newImage] = "\(url)"
+                            completion(url.absoluteString)
                         }
                     }
                 }

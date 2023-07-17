@@ -117,21 +117,19 @@ struct ImageEditor: View {
                         Button(action: {
                             let group = DispatchGroup()
 
-                            // Enter the group before the loop
-                            group.enter()
-                            print("This is curImage After LOOP: \(manager.curImages)")
-                            print(manager.curImages.count)
                             for (idx, curImage) in selectedScreen.images.enumerated() {
-                                // Call uploadImage which will return a new link.// Seems NewImage is not returning the old url and instead is reuploading an image...
+                                // Enter the group before the loop
+                                group.enter()
+                                // we wanna make sure for any image we change we get a url back for upload image.
                                 manager.uploadImage(newImage: curImage.image!) { imagePath in
                                     // Update the imageLink Dictionary.
-                                    print("current image Path \(imagePath)")
+                                    //This is just saving to the list of images/links we know exist in firebase storage.
                                     manager.imageLink[selectedScreen.images[idx].image!] = imagePath
                                     // newImage is already in selectedScreen we now just updating it with the URL
-                                    selectedScreen.images[idx].link = imagePath //Should be updating link.
+                                    self.selectedScreen.images[idx].link = imagePath // This works
+                                    group.leave()
                                 }
                             }
-                            group.leave()
                             group.notify(queue: .main) {
                                 // Action to perform when the button is tapped/later fix the updating firebase again...may 25
                                 updateItemsWithChanges(screen: selectedScreen)
@@ -143,8 +141,8 @@ struct ImageEditor: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                         .onChange(of: croppedImage) { newImage in
+                            //this is getting a little confusing, when ever I change an image it should save the image to the selectedScreens. When that happens forEach will visually change it on the screen. The important thing is that this should be saved to selectedscreen and then when submit button is pressed it should loop through the selectedScreen Images and based whats on their upload or return a url associated with that image. And thats what images should be returning... each time it has to call the function which should return a url and we save that new url to the selected screen....
                             if let newImage = newImage {
-                                //B/c I did this will need to loop through current screen when SUBMIT button is pressed and update it with the current link...I got to be care full tho b/c this might create duplciates.
                                 selectedScreen.images[selectedImageIdx].image = newImage
                                 self.croppedImage = nil
                             }
@@ -285,14 +283,15 @@ struct ImageEditor: View {
          */
     }
     
-    // Debating if we need "didUpdateImages"
+    // The reason for this function is to line up the UI info with info we going to send to firebase. Cause at this point they are two different "Locations" that hold info. now its more than likely messing up during the looping part or the info is messed up before the looping. Gotta check both.(info sent to this function is not right)
     func updateItemsWithChanges(screen: Screen) {
         for idx in manager.screens.indices {
             if manager.screens[idx].id == screen.id {
-                manager.screens[idx].items[selectedItemIdx] = screen.items[selectedItemIdx]
-                manager.screens[idx].images[selectedImageIdx] = screen.images[selectedImageIdx]
+                manager.screens[idx].items = screen.items
+                manager.screens[idx].images = screen.images
             }
         }
+        print("Current Screens: \(manager.screens)")
         //update firebase with changes
         manager.createFirebaseTemplate()
         print("\tUpdate Succeded!!")

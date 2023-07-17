@@ -190,8 +190,8 @@
             filePath = "Coffee Display/ViewModel/ScreenManager.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "271"
-            endingLineNumber = "271"
+            startingLineNumber = "272"
+            endingLineNumber = "272"
             landmarkName = "uploadImage(newImage:completion:)"
             landmarkType = "7">
             <Locations>
@@ -231,86 +231,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "5BF3ED70-4EB6-4698-92A2-15F13C2BDE4A"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Coffee Display/ViewModel/ScreenManager.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "274"
-            endingLineNumber = "274"
-            landmarkName = "uploadImage(newImage:completion:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "0BF2EFC0-CFF8-4381-A4EF-2EEA5848D0AF"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Coffee Display/ViewModel/ScreenManager.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "276"
-            endingLineNumber = "276"
-            landmarkName = "uploadImage(newImage:completion:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "0BF2EFC0-CFF8-4381-A4EF-2EEA5848D0AF - 38b2ffdf9262a521"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Optional&lt;FirebaseStorage.StorageListResult&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in Coffee_Display.ScreenManager.uploadImage(newImage: __C.UIImage, completion: (Swift.String) -&gt; ()) -&gt; ()"
-                  moduleName = "Coffee Display"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/brianrosales/Documents/swift/Coffee-Displays/Coffee%20Display/Coffee%20Display/ViewModel/ScreenManager.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "311"
-                  endingLineNumber = "311"
-                  offsetFromSymbolStart = "2952">
-               </Location>
-               <Location
-                  uuid = "0BF2EFC0-CFF8-4381-A4EF-2EEA5848D0AF - e567f62794ddfd57"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #2 (Swift.Optional&lt;FirebaseStorage.StorageMetadata&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in closure #1 (Swift.Optional&lt;FirebaseStorage.StorageListResult&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in Coffee_Display.ScreenManager.uploadImage(newImage: __C.UIImage, completion: (Swift.String) -&gt; ()) -&gt; ()"
-                  moduleName = "Coffee Display"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/brianrosales/Documents/swift/Coffee-Displays/Coffee%20Display/Coffee%20Display/ViewModel/ScreenManager.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "312"
-                  endingLineNumber = "312"
-                  offsetFromSymbolStart = "76">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "4DC14249-05A6-4D49-BFA7-647A07FB5DD9"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Model/View/ImageEditor.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "134"
-            endingLineNumber = "134"
-            landmarkName = "body"
-            landmarkType = "24">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "CA52DF78-8F17-461F-A913-39A9AFB04B13"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -318,8 +238,8 @@
             filePath = "Model/View/ImageEditor.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "137"
-            endingLineNumber = "137"
+            startingLineNumber = "135"
+            endingLineNumber = "135"
             landmarkName = "body"
             landmarkType = "24">
             <Locations>
@@ -366,8 +286,8 @@
             filePath = "Model/View/ImageEditor.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "129"
-            endingLineNumber = "129"
+            startingLineNumber = "127"
+            endingLineNumber = "127"
             landmarkName = "body"
             landmarkType = "24">
             <Locations>
