@@ -183,54 +183,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "315999E9-91F1-49BD-BDC4-673DC2F10D19"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "Coffee Display/ViewModel/ScreenManager.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "272"
-            endingLineNumber = "272"
-            landmarkName = "uploadImage(newImage:completion:)"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "315999E9-91F1-49BD-BDC4-673DC2F10D19 - 38b2ffdf9262a49c"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Optional&lt;FirebaseStorage.StorageListResult&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in Coffee_Display.ScreenManager.uploadImage(newImage: __C.UIImage, completion: (Swift.String) -&gt; ()) -&gt; ()"
-                  moduleName = "Coffee Display"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/brianrosales/Documents/swift/Coffee-Displays/Coffee%20Display/Coffee%20Display/ViewModel/ScreenManager.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "306"
-                  endingLineNumber = "306"
-                  offsetFromSymbolStart = "2092">
-               </Location>
-               <Location
-                  uuid = "315999E9-91F1-49BD-BDC4-673DC2F10D19 - 4048949bc5036e6f"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 ((key: __C.UIImage, value: Swift.String)) -&gt; Swift.Bool in closure #1 (Swift.Optional&lt;FirebaseStorage.StorageListResult&gt;, Swift.Optional&lt;Swift.Error&gt;) -&gt; () in Coffee_Display.ScreenManager.uploadImage(newImage: __C.UIImage, completion: (Swift.String) -&gt; ()) -&gt; ()"
-                  moduleName = "Coffee Display"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/brianrosales/Documents/swift/Coffee-Displays/Coffee%20Display/Coffee%20Display/ViewModel/ScreenManager.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "306"
-                  endingLineNumber = "306"
-                  offsetFromSymbolStart = "76">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "CA52DF78-8F17-461F-A913-39A9AFB04B13"
             shouldBeEnabled = "No"
             ignoreCount = "0"

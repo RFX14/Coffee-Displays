@@ -116,7 +116,7 @@ struct ImageEditor: View {
                         
                         Button(action: {
                             let group = DispatchGroup()
-
+                            // Issue: Not saving to firebase properly. url is an optional why?
                             for (idx, curImage) in selectedScreen.images.enumerated() {
                                 // Enter the group before the loop
                                 group.enter()

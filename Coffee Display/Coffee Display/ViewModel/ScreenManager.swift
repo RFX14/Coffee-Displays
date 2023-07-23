@@ -8,84 +8,128 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseStorage
-// current issue: when you change more than one picture and send it to firebase, only one of the image_# is changed. So the template is wrong before its sent to firebase...
-// Ok we going to limit the amount of images per user to ten. This will help us not have so many image/duplicates. Probably we shall allow each user to delete any photos on the cloud. Does that mean we want them to also choose photos from the cloud? more than likely yes!(still debating on doing that right now...)
+import CryptoKit
+//current Issue: So b/c url and images structures are unique I'm going to have to use SHA-256 b/c that will ACTUALLY check if images are the same. That being said I will probably have to download images for database and convert them to SHA-256. I'll probably save it to the dictionary but in a different form. So in dictionary: key = SHA256: Value [dictionary(image and url)]. So when I save them to the dictionary if SHA256 exist we don't add it. Only problem is that I will start calling alot of image downloads. Which can be a problem however if we treat aschyc in should be a problem.
+
+// first step: grab urls from data base, download images, convert to SHA256 and then save it to dictionary
+
+// 2nd step: download all images from storage, convert to SHA256 and then save to dictionary.
+
+// Note: Make the func for converting to SHA256 as flexible as possible so it be used by multiple functions.
 @MainActor
 class ScreenManager: ObservableObject {
     @Published var screens: [Screen] = []
     @Published var screen: String = "Austin"
+    //I'm wondering if we can flip this? so that its url: UIimage? not yet.. but thats the goal.
     @Published var imageLink: [UIImage: String] = [:]
     
-    var curImages: [UIImage: String] = [:]
+    private var urlsFromDatabase: [String] = []
     private var links: [String] = []
-    private var linkWithImage: [String: UIImage] = [:]
+    // This will be used to store and as well update screens with the latest images from firebase
+    private var currentImagesInStorage: [String: Any] = [:]
+    private var linksWithImages: [String: UIImage] = [:] //Maybe will be deleted for the new dictionary of [SHA256: [image: UImage, image_url: string]]
     private var changes: [String: Any] = [:]
     private var db = Firestore.firestore()
     private var listener: ListenerRegistration?
     private var user: String = "test_acct"
     
-    
-    /*
-    func uploadChanges() {
-        db.collection("users").document(user).updateData([
-            "screens.\(screen)": screens
-        ])
-    }
-     */
+    //right after this create a function that converts to SHA256 and then returns that value.
+    func fetchImagesFromDatabase(completion: @escaping () -> Void) {
+        let storage = Storage.storage()
+        let dispatchGroup = DispatchGroup()
+        var tempcurrentImagesInStorage = currentImagesInStorage
 
-    func processImageUrls(completion: @escaping () -> Void) {
-        // Create a dispatch group
-        let group = DispatchGroup()
-        
-        // Example: Download the images
-        for imageUrl in links {
-            let url = URL(string: imageUrl)
-            // Enter the dispatch group
-            group.enter()
+        for imageURL in self.urlsFromDatabase {
+            dispatchGroup.enter()
+
+            // Get a reference to the image with the specified URL
+            let imageRef = storage.reference(forURL: imageURL)
             
-            downloadImage(from: url!) {
-                // Leave the dispatch group when image download is finished
-                group.leave()
+            // Download the image data
+            imageRef.getData(maxSize: 10 * 1024 * 1024) { (data, error) in
+                if let error = error {
+                    print("Error fetching image data for URL \(imageURL): \(error.localizedDescription)")
+                } else {
+                    // If image data is successfully retrieved, create a UIImage from the data
+                    if let imageData = data {
+                        // Call ConvertToSHA256 and then save to dictionary
+                        let sHA256Hash = self.convertToSHA256(imageData: imageData)
+                        tempcurrentImagesInStorage[sHA256Hash] = ["image": UIImage(data: imageData) ?? UIImage(named: "imageTest.png")!, "link": imageURL] as [String : Any]
+                    }
+                }
+                dispatchGroup.leave()
             }
         }
         
-        // Notify the group when all image downloads are finished
-        group.notify(queue: .main) {
-            //Don't know why but I'm only getting testImage.png...
-            //print(self.curImages)
-            //print(self.linkWithImage)
-            // Call the completion closure
+        dispatchGroup.notify(queue: .main) {
+            self.currentImagesInStorage = tempcurrentImagesInStorage
             completion()
         }
     }
-
     
-    func downloadImage(from url: URL, completion: @escaping () -> Void) {
-        URLSession.shared.dataTask(with: url) { (data, response, error) in
+    func convertToSHA256(imageData: Data) -> String {
+        let hashedData = SHA256.hash(data: imageData)
+        return hashedData.compactMap { String(format: "%02x", $0) }.joined()
+    }
+    
+    func fetchAllImages(completion: @escaping () -> Void) {
+        let storage = Storage.storage()
+        let storageRef = storage.reference()
+        var tempcurrentImagesInStorage = currentImagesInStorage
+
+        // Assuming you have a folder named "images" in Firebase Storage
+        let imagesRef = storageRef.child("images")
+
+        // Create a dispatch group
+        let dispatchGroup = DispatchGroup()
+        var counter: [String] = []
+
+        // Fetch the list of items (images) in the "images" folder
+        imagesRef.listAll { (result, error) in
             if let error = error {
-                // Handle error
-                print("Error downloading image: \(error.localizedDescription)")
-                completion()
+                print("Error fetching images: \(error.localizedDescription)")
+                completion() // Call the completion block with an error if needed
                 return
             }
-            
-            // Process the downloaded image data as needed
-            if let data = data, let image = UIImage(data: data) {
-                DispatchQueue.main.async {
+
+            // Enumerate through the list of items (images)
+            for imageRef in result?.items ?? [] {
+                dispatchGroup.enter() // Enter the dispatch group before starting each image retrieval
+                
+                imageRef.getData(maxSize: 10 * 1024 * 1024) { (data, error) in
+                    defer {
+                        dispatchGroup.leave() // Leave the dispatch group once the image data is fetched
+                    }
                     
-                    self.curImages[image] = "\(url)"
-                    self.linkWithImage["\(url)"] = image
-                    //print(self.curImages)
-                    completion()
-                }
-            } else {
-                DispatchQueue.main.async {
-                    completion()
+                    if let error = error {
+                        print("Error fetching image data: \(error.localizedDescription)")
+                        return
+                    }
+
+                    if let imageData = data {
+                        imageRef.downloadURL { (url, error) in
+                            if let error = error {
+                                print("Error fetching download URL: \(error.localizedDescription)")
+                                return
+                            }
+
+                            if let downloadURL = url {
+                                let sHA256Hash = self.convertToSHA256(imageData: imageData)
+                                tempcurrentImagesInStorage[sHA256Hash] = ["image": UIImage(data: imageData) ?? UIImage(named: "imageTest.png")!, "link": String(describing: downloadURL)] as [String : Any]
+                                //just a counter(will probably change)
+                                counter.append(String(describing: downloadURL))
+
+                                // Check if all images have been processed and download URLs are retrieved
+                                if counter.count == result?.items.count {
+                                    completion()
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        }.resume()
+        }
     }
-
     
     // Note: completion handler was used to make sure everthing was completed before the name sorting would be completed in the main view.
     //Current Issue: when ever I add another image to a screen it messes up the fetching and creates duplicate screens.
@@ -117,23 +161,20 @@ class ScreenManager: ObservableObject {
                             let description = item_values["description"] as? String ?? ""
                             let position = item_values["position"] as? Int ?? 0
                             
-                            items.append(.init(title: item_name, price: price, description: description, position: position))
+                            items.append(.init(title: item_name, price: price, description: description, position: position ))
                             
                         }
                     }
                 }
-                //Images (this will be modified and merged with something)
                 for (title, details) in item {
                     if title == "images" {
                         let image_details = details as? [String: [String: Any]] ?? [:]
-                        
+                    
                         for (image_name, image_values) in image_details {
                             let image_link = image_values["link"] as? String ?? ""
                             let position = image_values["position"] as? Int ?? 0
                             images.append(.init(title: image_name, link: image_link, position: position, image: UIImage(named: "imageTest.png")!))
-                            // Will be used to grab the images and refill screens.image with the proper images. will call download images which will populate a dictionary...(linkWithImage) we will use addImages to merge everything.
-                            self.linkWithImage[image_link] = UIImage(named: "imageTest.png")!
-                            self.links.append(image_link)
+                            self.urlsFromDatabase.append(image_link)
                         }
                     }
                 }
@@ -142,32 +183,42 @@ class ScreenManager: ObservableObject {
             completion()
         }
     }
-    //Since simply updates Screen with the images that were found in storage.
+    
+    //this will probably be deleted. I'm wondering if I should add the SHA256 to the database b/c I dont know what images belong to each screen or image box.
     func addNewImages(completion: @escaping (() -> Void)) {
         print("add new images")
         let group = DispatchGroup()
-        for (i, curScreen) in self.screens.enumerated() {
+        
+        // Create a temporary copy of the global 'screens' array
+        var tempScreens = self.screens
+        
+        for (i, curScreen) in tempScreens.enumerated() {
             let images = curScreen.images
             for (j, curImage) in images.enumerated() {
                 if let link = curImage.link {
-                    if let newImage = self.linkWithImage[link] {
+                    // Basically, if the URL exists in the dictionary as a KEY, then we grab the image and update tempScreens with it.
+                    if let image = self.linksWithImages[link] {
+                        print("updating tempScreens")
                         group.enter()
                         DispatchQueue.main.async {
-                            self.screens[i].images[j].image = newImage
+                            tempScreens[i].images[j].image = image
                             group.leave()
                         }
                     } else {
-                        print(curImage.link)
-                        print("image not found")
+                        print("Image not found for link: \(link)")
                     }
                 }
             }
         }
+        
         group.notify(queue: DispatchQueue.main) {
-            print(self.linkWithImage)
+            // Update the global 'screens' variable with the temporary copy
+            self.screens = tempScreens
             completion()
         }
     }
+
+
     
     func deleteItems(newScreen: Screen) {
         for idx in screens.indices {
@@ -214,7 +265,7 @@ class ScreenManager: ObservableObject {
                    let imageUrl = imageLink[imageKey] {
                     firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = [
                         "link": imageUrl,
-                        "position": curImage.position
+                        "position": curImage.position ?? -1
                     ]
                     group.leave()
                 } else {
@@ -232,7 +283,7 @@ class ScreenManager: ObservableObject {
                            let imageUrl = self.imageLink[imageKey] {
                             firebaseTemplate[currentScreen.name]?["images"]?[curImage.title ?? "image_0"] = [
                                 "link": imageUrl,
-                                "position": curImage.position
+                                "position": curImage.position ?? -1
                             ]
                         }
                         
@@ -249,48 +300,58 @@ class ScreenManager: ObservableObject {
         }
     }
     
-    //sends NEW pictures twice if we changed one photo. 
-    func uploadImage(newImage: UIImage, completion: @escaping ((String) -> ())) {
+    //sends NEW pictures twice if we changed one photo...I wonder if we should avoid checking storage and just download everything locally... would that bite us in the butt? like if we limit 10 per user I think we should be fine...yeah that should works. its just we need to make sure
+    func uploadImage(newImage: UIImage, completion: @escaping (String) -> Void) {
         guard let imageData = newImage.jpegData(compressionQuality: 0.8) else {
+            print("Cannot Convert To Image.")
             return
         }
         
-        let storageRef = Storage.storage().reference()
-        let path = "images/\(UUID().uuidString).jpg"
-        let fileRef = storageRef.child(path)
+        // Makes sure its not the test image.
+        guard newImage != UIImage(named: "imageTest.png") else {
+            print("image Test: \(newImage)")
+            return
+        }
         
-        // Check if the file already exists
-        fileRef.listAll { result, error in
+        // Ignores Test Image
+        guard newImage != UIImage(named: "imageTest") else {
+            print("imageData is equal to imageTest")
+            return
+        }
+        
+        // Checks if images already exists (This part needs work, I'm not sure if every image is unique interally, look into it.
+        print("imageLInk: \(imageLink)")
+        print("newImage: \(newImage)")
+        if let urlFound = imageLink[newImage] {
+            completion("\(String(describing: urlFound))")
+        }
+
+        let storage = Storage.storage()
+        let storageRef = storage.reference()
+        
+        // Replace "images/image.jpg" with your desired path and filename
+        let imageRef = storageRef.child("images/\(UUID().uuidString).jpg")
+
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+
+        let uploadTask = imageRef.putData(imageData, metadata: metadata) { metadata, error in
             if let error = error {
-                // Handle error
-                print("Error listing files: \(error.localizedDescription)")
                 return
-            }
-            
-            
-            print("New IMAGE: \(newImage)")
-            // will try to upload and and return the url
-            fileRef.putData(imageData, metadata: nil) { metadata, error in
-                if error == nil && metadata != nil {
-                    fileRef.downloadURL { url, error in
-                        if let error = error {
-                            // Handle error
-                            print("Error getting download URL: \(error.localizedDescription)")
-                            return
-                        }
-                        //The adding to curImages needs more work it keep adding alot of things
-                        if let url = url {
-                            print("added New Image: \(newImage)")
-                            //Save new image to curImages
-                            self.curImages[newImage] = "\(url)"
-                            completion(url.absoluteString)
-                        }
-                    }
+            } else {
+                imageRef.downloadURL { url, error in
+                    completion("\(String(describing: url))")
                 }
             }
         }
-    }
 
+        // Optionally, observe the progress of the upload
+        uploadTask.observe(.progress) { snapshot in
+            let percentComplete = 100.0 * Double(snapshot.progress!.completedUnitCount)
+                / Double(snapshot.progress!.totalUnitCount)
+            print("Upload progress: \(percentComplete)%")
+        }
+    }
 
     func updateFirebase(firebaseTemplate: [String: [String: Any]] ) {
         
