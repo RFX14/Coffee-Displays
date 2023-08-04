@@ -9,7 +9,8 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseStorage
 import CryptoKit
-//current Issue: So b/c url and images structures are unique I'm going to have to use SHA-256 b/c that will ACTUALLY check if images are the same. That being said I will probably have to download images for database and convert them to SHA-256. I'll probably save it to the dictionary but in a different form. So in dictionary: key = SHA256: Value [dictionary(image and url)]. So when I save them to the dictionary if SHA256 exist we don't add it. Only problem is that I will start calling alot of image downloads. Which can be a problem however if we treat aschyc in should be a problem.
+//current Issue: So b/c url and images structures are unique I'm going to have to use SHA-256 b/c that will ACTUALLY check if images are the same. That being said I will probably have to download images for database and convert them to SHA-256. I'll probably save it to the dictionary but in a different form. So in dictionary: key = SHA256: Value [dictionary(image and url)]. So when I save them to the dictionary if SHA256 exist we don't add it. Only problem is that I will start calling alot of image downloads. Which can be a problem when it comes to speed, however if we treat aschyc in should not be a problem.
+//but saving should only occur when sending info...
 
 // first step: grab urls from data base, download images, convert to SHA256 and then save it to dictionary
 
@@ -20,14 +21,13 @@ import CryptoKit
 class ScreenManager: ObservableObject {
     @Published var screens: [Screen] = []
     @Published var screen: String = "Austin"
-    //I'm wondering if we can flip this? so that its url: UIimage? not yet.. but thats the goal.
     @Published var imageLink: [UIImage: String] = [:]
     
-    private var urlsFromDatabase: [String] = []
+    private var urlsFromDatabase: [String] = [] //I'm wondering if we can just use linksWithImages...
     private var links: [String] = []
     // This will be used to store and as well update screens with the latest images from firebase
-    private var currentImagesInStorage: [String: Any] = [:]
-    private var linksWithImages: [String: UIImage] = [:] //Maybe will be deleted for the new dictionary of [SHA256: [image: UImage, image_url: string]]
+    private var currentImagesInStorage: [String: Any] = [:] // is this the same as linksWithImages??? if so I should get rid of it.
+    private var linksWithImages: [String : ShaInfo] = [:] //Maybe will be deleted for the new dictionary of [SHA256: [image: UImage, image_url: string]]
     private var changes: [String: Any] = [:]
     private var db = Firestore.firestore()
     private var listener: ListenerRegistration?
@@ -37,24 +37,25 @@ class ScreenManager: ObservableObject {
     func fetchImagesFromDatabase(completion: @escaping () -> Void) {
         let storage = Storage.storage()
         let dispatchGroup = DispatchGroup()
-        var tempcurrentImagesInStorage = currentImagesInStorage
+        var tempcurrentImagesInStorage = linksWithImages
 
-        for imageURL in self.urlsFromDatabase {
+        for (_, imageInfo) in self.linksWithImages {
             dispatchGroup.enter()
 
             // Get a reference to the image with the specified URL
-            let imageRef = storage.reference(forURL: imageURL)
+            let imageRef = storage.reference(forURL: imageInfo.link ?? "")
             
             // Download the image data
             imageRef.getData(maxSize: 10 * 1024 * 1024) { (data, error) in
                 if let error = error {
-                    print("Error fetching image data for URL \(imageURL): \(error.localizedDescription)")
+                    print("Error fetching image data for URL \(String(describing: imageInfo.link)): \(error.localizedDescription)")
                 } else {
                     // If image data is successfully retrieved, create a UIImage from the data
                     if let imageData = data {
                         // Call ConvertToSHA256 and then save to dictionary
-                        let sHA256Hash = self.convertToSHA256(imageData: imageData)
-                        tempcurrentImagesInStorage[sHA256Hash] = ["image": UIImage(data: imageData) ?? UIImage(named: "imageTest.png")!, "link": imageURL] as [String : Any]
+                        let shaKey = self.convertToSHA256(imageData: imageData)
+                        // Worst case scenario this will overwrite the same shaKey and replace it with new data.
+                        tempcurrentImagesInStorage[shaKey] = ShaInfo(shaKey: imageInfo.shaKey, image: UIImage(data: imageData) ?? UIImage(named: "imageTest.png")!, link: imageInfo.link)
                     }
                 }
                 dispatchGroup.leave()
@@ -62,7 +63,7 @@ class ScreenManager: ObservableObject {
         }
         
         dispatchGroup.notify(queue: .main) {
-            self.currentImagesInStorage = tempcurrentImagesInStorage
+            self.linksWithImages = tempcurrentImagesInStorage
             completion()
         }
     }
@@ -75,7 +76,7 @@ class ScreenManager: ObservableObject {
     func fetchAllImages(completion: @escaping () -> Void) {
         let storage = Storage.storage()
         let storageRef = storage.reference()
-        var tempcurrentImagesInStorage = currentImagesInStorage
+        var tempcurrentImagesInStorage = linksWithImages
 
         // Assuming you have a folder named "images" in Firebase Storage
         let imagesRef = storageRef.child("images")
@@ -114,13 +115,14 @@ class ScreenManager: ObservableObject {
                             }
 
                             if let downloadURL = url {
-                                let sHA256Hash = self.convertToSHA256(imageData: imageData)
-                                tempcurrentImagesInStorage[sHA256Hash] = ["image": UIImage(data: imageData) ?? UIImage(named: "imageTest.png")!, "link": String(describing: downloadURL)] as [String : Any]
+                                let shaKey = self.convertToSHA256(imageData: imageData)
+                                tempcurrentImagesInStorage[shaKey] = ShaInfo(shaKey: shaKey, image: UIImage(data: imageData) ?? UIImage(named: "imageTest.png")!, link: tempcurrentImagesInStorage[shaKey]?.link)
                                 //just a counter(will probably change)
                                 counter.append(String(describing: downloadURL))
 
                                 // Check if all images have been processed and download URLs are retrieved
                                 if counter.count == result?.items.count {
+                                    self.linksWithImages = tempcurrentImagesInStorage
                                     completion()
                                 }
                             }
@@ -133,7 +135,7 @@ class ScreenManager: ObservableObject {
     
     // Note: completion handler was used to make sure everthing was completed before the name sorting would be completed in the main view.
     //Current Issue: when ever I add another image to a screen it messes up the fetching and creates duplicate screens.
-    func fetchAvailableScreens(completion: @escaping(() -> Void)) {
+    func fetchAvailableScreens(completion: @escaping (() -> Void)) {
         self.db.collection("users").document(self.user).getDocument { docSnapshot, err in
             guard let doc = docSnapshot else {
                 print("Error fetching document: \(err!)")
@@ -144,47 +146,54 @@ class ScreenManager: ObservableObject {
                 print("Error fetching data: \(err!)")
                 return
             }
+            
             let allScreens = data["screens"] as? [String: Any] ?? [:]
+            var tempLinkWithImages: [String: ShaInfo] = [:] // Initialize the dictionary
             
             // Items
             for (curScreen, item) in allScreens {
-                //print(item)
                 let item = item as? [String: Any] ?? [:]
                 var items: [BasicItem] = []
                 var images: [Images] = []
                 
                 for (title, details) in item {
-                     if title == "items" {
+                    if title == "items" {
                         let item_details = details as? [String: [String: Any]] ?? [:]
                         for (item_name, item_values) in item_details {
                             let price = item_values["price"] as? String ?? ""
                             let description = item_values["description"] as? String ?? ""
                             let position = item_values["position"] as? Int ?? 0
                             
-                            items.append(.init(title: item_name, price: price, description: description, position: position ))
-                            
+                            items.append(.init(title: item_name, price: price, description: description, position: position))
                         }
-                    }
-                }
-                for (title, details) in item {
-                    if title == "images" {
+                    } else if title == "images" {
                         let image_details = details as? [String: [String: Any]] ?? [:]
-                    
+                        
                         for (image_name, image_values) in image_details {
                             let image_link = image_values["link"] as? String ?? ""
                             let position = image_values["position"] as? Int ?? 0
-                            images.append(.init(title: image_name, link: image_link, position: position, image: UIImage(named: "imageTest.png")!))
+                            let shaKey = image_values["sha_key"] as? String ?? ""
+                            
+                            images.append(.init(title: image_name, link: image_link, position: position, image: UIImage(named: "imageTest.png")!, shaKey: shaKey))
+                            // will probably delete
                             self.urlsFromDatabase.append(image_link)
+                            
+                            // Only update tempLinkWithImages if the value doesn't exist
+                            if tempLinkWithImages[shaKey] == nil {
+                                tempLinkWithImages[shaKey] = ShaInfo(shaKey: shaKey, image: UIImage(named: "imageTest.png")!, link: image_link)
+                            }
                         }
                     }
                 }
                 self.screens.append(Screen(name: curScreen, items: items, images: images))
             }
+            self.linksWithImages = tempLinkWithImages
             completion()
         }
     }
+
     
-    //this will probably be deleted. I'm wondering if I should add the SHA256 to the database b/c I dont know what images belong to each screen or image box.
+    // The idea for this function, is that it will update screens with the images that were downloaded from storage.
     func addNewImages(completion: @escaping (() -> Void)) {
         print("add new images")
         let group = DispatchGroup()
@@ -195,30 +204,27 @@ class ScreenManager: ObservableObject {
         for (i, curScreen) in tempScreens.enumerated() {
             let images = curScreen.images
             for (j, curImage) in images.enumerated() {
-                if let link = curImage.link {
-                    // Basically, if the URL exists in the dictionary as a KEY, then we grab the image and update tempScreens with it.
-                    if let image = self.linksWithImages[link] {
-                        print("updating tempScreens")
-                        group.enter()
-                        DispatchQueue.main.async {
-                            tempScreens[i].images[j].image = image
-                            group.leave()
-                        }
-                    } else {
-                        print("Image not found for link: \(link)")
+                // No need for conditional binding if shaKey is a non-optional String property
+                let shaKey = curImage.shaKey
+                // Rest of the code remains the same
+                if let image = self.linksWithImages[shaKey]?.image {
+                    print("updating tempScreens")
+                    group.enter()
+                    DispatchQueue.main.async {
+                        tempScreens[i].images[j].image = image
+                        group.leave()
                     }
+                } else {
+                    print("Image not found for link: \(shaKey)")
                 }
             }
         }
-        
         group.notify(queue: DispatchQueue.main) {
             // Update the global 'screens' variable with the temporary copy
             self.screens = tempScreens
             completion()
         }
     }
-
-
     
     func deleteItems(newScreen: Screen) {
         for idx in screens.indices {

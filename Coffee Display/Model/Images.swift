@@ -14,5 +14,13 @@ struct Images: Identifiable, Hashable  {
     var link: String? = "N/A"
     var position: Int? = 0
     var image: UIImage? = UIImage(named: "imageTest.png")
+    var shaKey: String = ""
+}
+
+struct ShaInfo: Identifiable, Hashable {
+    let id = UUID()
+    var shaKey: String = ""
+    var image: UIImage? = UIImage(named: "imageTest.png")
+    var link: String? = "N/A"
 }
 
